@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_BASE_URL = 'https://danylofastapi-production.up.railway.app/api';
-const SCRAPER_URL = 'http://danyloscrape-production.up.railway.app/scrape';
+const SCRAPER_URL = 'https://danyloscrape-production.up.railway.app/scrape';
 
 export const fetchBrands = async () => {
     try {
