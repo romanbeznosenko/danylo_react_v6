@@ -1,0 +1,92 @@
+.filter-panel {
+    width: 250px;
+    background-color: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.filter-section {
+    margin-bottom: 20px;
+    /* Add this to contain all elements inside the section */
+    overflow: hidden;
+}
+
+.filter-section h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.filter-section .toggle-icon {
+    font-weight: bold;
+    margin-left: 5px;
+}
+
+.filter-section .selected-count {
+    font-size: 14px;
+    color: #666;
+    margin-left: 5px;
+}
+
+.filter-section input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    /* Ensure input stays within its container */
+    box-sizing: border-box;
+}
+
+/* Style the checkbox group container */
+.checkbox-group-container {
+    max-height: 200px;
+    overflow-y: auto;
+    width: 100%;
+    /* Ensure content stays within bounds */
+    box-sizing: border-box;
+}
+
+.search-button {
+    width: 100%;
+    padding: 10px;
+    background-color: #1976d2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    /* Ensure button stays within bounds */
+    box-sizing: border-box;
+}
+
+.search-button:hover {
+    background-color: #1565c0;
+}
+
+.clear-button {
+    width: 100%;
+    padding: 10px;
+    background-color: #f5f5f5;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background-color 0.2s;
+    /* Ensure button stays within bounds */
+    box-sizing: border-box;
+}
+
+.clear-button:hover {
+    background-color: #e0e0e0;
+}

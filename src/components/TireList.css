@@ -1,0 +1,97 @@
+.tire-list {
+    margin-top: 20px;
+}
+
+.tire-count {
+    margin-bottom: 15px;
+    font-weight: 500;
+}
+
+.tire-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.tire-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.tire-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.tire-header {
+    margin-bottom: 10px;
+}
+
+.tire-header h3 {
+    margin: 0 0 5px 0;
+    font-size: 16px;
+}
+
+.tire-brand {
+    color: #666;
+    font-size: 14px;
+}
+
+.tire-dimension {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.tire-details {
+    margin-bottom: 15px;
+}
+
+.detail-item {
+    display: flex;
+    margin-bottom: 5px;
+}
+
+.detail-label {
+    width: 70px;
+    color: #666;
+}
+
+.tire-footer {
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tire-price {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.price-change {
+    font-size: 14px;
+}
+
+.price-decreased {
+    color: #2e7d32;
+}
+
+.price-increased {
+    color: #d32f2f;
+}
+
+.no-results {
+    background-color: white;
+    padding: 30px;
+    text-align: center;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    color: #666;
+}
