@@ -1,3 +1,5 @@
+/* Updated CSS for DatabaseTiresPage.css - Two column layout */
+
 .database-tires-page {
     padding: 20px 0;
 }
@@ -13,8 +15,22 @@
     gap: 20px;
 }
 
-.filter-panel-skeleton {
+/* Left section containing selected filters and filter panel */
+.left-section {
     width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex-shrink: 0;
+}
+
+/* Ensure selected filters display fits within left section */
+.left-section .selected-filters-display {
+    margin-bottom: 0;
+}
+
+.filter-panel-skeleton {
+    width: 100%;
     height: 600px;
     background: #f8f8f8;
     border-radius: 8px;
@@ -69,7 +85,7 @@
     top: 0;
 }
 
-.tires-table th:hover {
+.tires-table th.sortable:hover {
     background-color: #e9e9e9;
 }
 
@@ -161,8 +177,11 @@
         flex-direction: column;
     }
 
-    .filter-panel-skeleton {
+    .left-section {
         width: 100%;
+    }
+
+    .filter-panel-skeleton {
         height: 300px;
     }
 }

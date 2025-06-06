@@ -1,0 +1,176 @@
+.selected-filters-display {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.selected-filters-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.selected-filters-header h3 {
+    margin: 0;
+    color: #495057;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.clear-all-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+.clear-all-btn:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+}
+
+.selected-filters-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.filter-group {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.filter-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.filter-group-label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 14px;
+}
+
+.clear-group-btn {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.2s ease;
+}
+
+.clear-group-btn:hover {
+    background: #545b62;
+}
+
+.filter-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.filter-tag {
+    display: inline-flex;
+    align-items: center;
+    background: #007bff;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 20px;
+    font-size: 13px;
+    line-height: 1;
+    box-shadow: 0 1px 3px rgba(0, 123, 255, 0.3);
+    transition: all 0.2s ease;
+}
+
+.filter-tag:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0, 123, 255, 0.4);
+}
+
+.filter-tag-text {
+    margin-right: 6px;
+    white-space: nowrap;
+}
+
+.remove-filter-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 1;
+    transition: background-color 0.2s ease;
+}
+
+.remove-filter-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .selected-filters-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
+    }
+
+    .filter-group-header {
+        flex-direction: column;
+        gap: 8px;
+        align-items: stretch;
+    }
+
+    .filter-tags {
+        justify-content: center;
+    }
+
+    .clear-all-btn,
+    .clear-group-btn {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* Animation for filter removal */
+.filter-tag {
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

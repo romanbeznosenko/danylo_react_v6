@@ -1,7 +1,9 @@
 import axios from 'axios';
 
 const API_BASE_URL = 'https://danylofastapi-production.up.railway.app/api';
+// const API_BASE_URL = 'http://127.0.0.1:8080/api';
 const SCRAPER_URL = 'https://danyloscrape-production.up.railway.app/scrape';
+// const SCRAPER_URL = 'http://0.0.0.0:8081/scrape';
 
 export const fetchBrands = async () => {
     try {
@@ -18,39 +20,64 @@ export const fetchTires = async (params = {}) => {
     try {
         const queryParams = new URLSearchParams();
 
+        // Add pagination parameters
+        if (params.page) {
+            queryParams.append('page', params.page.toString());
+        }
+
+        if (params.per_page) {
+            queryParams.append('per_page', params.per_page.toString());
+        }
+
+        // Add sorting parameters
+        if (params.sort_by) {
+            queryParams.append('sort_by', params.sort_by);
+        }
+
+        if (params.sort_order) {
+            queryParams.append('sort_order', params.sort_order);
+        }
+
+        // Add filter parameters
         if (params.brand_name && params.brand_name.length > 0) {
             params.brand_name.forEach(brand => {
-                queryParams.append('brand_name', brand);
+                const brandName = typeof brand === 'object' ? brand.brand_name : brand;
+                queryParams.append('brand_name', brandName);
             });
         }
 
         if (params.seasons && params.seasons.length > 0) {
             params.seasons.forEach(season => {
-                queryParams.append('seasons', season);
+                const seasonName = typeof season === 'object' ? season.id : season;
+                queryParams.append('seasons', seasonName);
             });
         }
 
         if (params.widths && params.widths.length > 0) {
             params.widths.forEach(width => {
-                queryParams.append('widths', width);
+                const widthValue = typeof width === 'object' ? width.width : width;
+                queryParams.append('widths', widthValue);
             });
         }
 
         if (params.profils && params.profils.length > 0) {
             params.profils.forEach(profil => {
-                queryParams.append('profils', profil);
+                const profilValue = typeof profil === 'object' ? profil.profil : profil;
+                queryParams.append('profils', profilValue);
             });
         }
 
         if (params.diametrs && params.diametrs.length > 0) {
             params.diametrs.forEach(diametr => {
-                queryParams.append('diametrs', diametr);
+                const diametrValue = typeof diametr === 'object' ? diametr.diametr : diametr;
+                queryParams.append('diametrs', diametrValue);
             });
         }
 
         if (params.models && params.models.length > 0) {
             params.models.forEach(model => {
-                queryParams.append('models', model);
+                const modelValue = typeof model === 'object' ? model.model : model;
+                queryParams.append('models', modelValue);
             });
         }
 
@@ -76,16 +103,22 @@ export const fetchTires = async (params = {}) => {
 };
 
 // Improved scrapeTires function that matches Django implementation
-export const scrapeTires = async (url, pageCount = -1) => {
+export const scrapeTires = async (url, pageCount = -1, additionalFilters = null) => {
     try {
         console.log('Scraping tires from URL:', url);
         console.log('Page count:', pageCount);
+        console.log('Additional filters:', additionalFilters);
 
         // Create the request payload in the same format as Django
         const requestPayload = {
             url: url,
             page_count: pageCount
         };
+
+        // Add additional filters if provided
+        if (additionalFilters) {
+            requestPayload.filters = additionalFilters;
+        }
 
         console.log('Request payload:', requestPayload);
 

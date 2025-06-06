@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import FilterPanel from '../components/FilterPanel';
+import SelectedFiltersDisplay from '../components/SelectedFiltersDisplay';
 import TireList from '../components/TireList';
 import ActionButtons from '../components/ActionButtons';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -29,6 +30,34 @@ const VEHICLE_TYPES = [
     { id: 'mototsikl', name: 'Мотоцикл' },
     { id: 'spetstehnika', name: 'Спецтехніка' }
 ];
+
+// Helper function to sort numeric values in ascending order
+const sortNumericAsc = (items, getValueFn) => {
+    return [...items].sort((a, b) => {
+        const valueA = parseFloat(getValueFn(a)) || 0;
+        const valueB = parseFloat(getValueFn(b)) || 0;
+        return valueA - valueB;
+    });
+};
+
+// Helper function to sort alphabetically (English first, then Ukrainian)
+const sortAlphabeticallyMixed = (items, getValueFn) => {
+    return [...items].sort((a, b) => {
+        const valueA = getValueFn(a).toLowerCase();
+        const valueB = getValueFn(b).toLowerCase();
+
+        // Check if strings start with English or Ukrainian letters
+        const isEnglishA = /^[a-z]/.test(valueA);
+        const isEnglishB = /^[a-z]/.test(valueB);
+
+        // If one is English and other is Ukrainian, English comes first
+        if (isEnglishA && !isEnglishB) return -1;
+        if (!isEnglishA && isEnglishB) return 1;
+
+        // If both are same type (both English or both Ukrainian), sort alphabetically
+        return valueA.localeCompare(valueB, 'uk-UA', { numeric: true });
+    });
+};
 
 const HomePage = () => {
     const [filterData, setFilterData] = useState({
@@ -95,14 +124,33 @@ const HomePage = () => {
                         fetchTireModels()
                     ]);
 
-                    // Update filter data with any successfully loaded data
-                    setFilterData(prev => ({
-                        ...prev,
-                        widths: widthsResponse.status === 'fulfilled' ? widthsResponse.value.widths || [] : [],
-                        profils: profilsResponse.status === 'fulfilled' ? profilsResponse.value.profils || [] : [],
-                        diametrs: diametrsResponse.status === 'fulfilled' ? diametrsResponse.value.diametrs || [] : [],
-                        models: modelsResponse.status === 'fulfilled' ? modelsResponse.value.models || [] : []
-                    }));
+                    // Update filter data with any successfully loaded data and sort widths/profils
+                    setFilterData(prev => {
+                        const widths = widthsResponse.status === 'fulfilled' ? widthsResponse.value.widths || [] : [];
+                        const profils = profilsResponse.status === 'fulfilled' ? profilsResponse.value.profils || [] : [];
+                        const diametrs = diametrsResponse.status === 'fulfilled' ? diametrsResponse.value.diametrs || [] : [];
+                        const models = modelsResponse.status === 'fulfilled' ? modelsResponse.value.models || [] : [];
+
+                        return {
+                            ...prev,
+                            // Sort widths by numeric value (ascending)
+                            widths: sortNumericAsc(widths, item =>
+                                typeof item === 'object' ? item.width : item
+                            ),
+                            // Sort profils by numeric value (ascending)
+                            profils: sortNumericAsc(profils, item =>
+                                typeof item === 'object' ? item.profil : item
+                            ),
+                            // Also sort diameters for consistency
+                            diametrs: sortNumericAsc(diametrs, item =>
+                                typeof item === 'object' ? item.diametr : item
+                            ),
+                            // Sort models alphabetically (English first, then Ukrainian)
+                            models: sortAlphabeticallyMixed(models, item =>
+                                typeof item === 'object' ? item.model : item
+                            )
+                        };
+                    });
                 } catch (err) {
                     console.error('Error loading additional filter data:', err);
                     // We'll continue with at least the brands data
@@ -139,39 +187,46 @@ const HomePage = () => {
         }));
     };
 
+    const handleRemoveFilter = (filterType, newValues) => {
+        setSelectedFilters(prev => ({
+            ...prev,
+            [filterType]: newValues
+        }));
+    };
+
     // Build the URL for the scraper based on selected filters
     const buildScraperUrl = () => {
         // Base URL components
         let baseUrl = 'https://infoshina.com.ua/uk/shiny';
         const queryParams = {};
         const pathComponents = [];
-        
+
         // Add brand to path if selected
         if (selectedFilters.brands.length > 0) {
             const brandValue = selectedFilters.brands[0];
             const brandName = typeof brandValue === 'object' ? brandValue.brand_name : brandValue;
             pathComponents.push(brandName.toLowerCase());
         }
-        
+
         // Add width/height/radius components to the path in the correct format
         if (selectedFilters.widths.length > 0) {
             const widthValue = selectedFilters.widths[0];
             const width = typeof widthValue === 'object' ? widthValue.width : widthValue;
             pathComponents.push(`w${width}`);
         }
-        
+
         if (selectedFilters.profils.length > 0) {
             const profilValue = selectedFilters.profils[0];
             const profil = typeof profilValue === 'object' ? profilValue.profil : profilValue;
             pathComponents.push(`h${profil}`);
         }
-        
+
         if (selectedFilters.diametrs.length > 0) {
             const diametrValue = selectedFilters.diametrs[0];
             const diametr = typeof diametrValue === 'object' ? diametrValue.diametr : diametrValue;
             pathComponents.push(`r${diametr}`);
         }
-        
+
         // Handle additional brands (beyond the first) in query parameters
         if (selectedFilters.brands.length > 1) {
             const brandValues = selectedFilters.brands.map(brand =>
@@ -179,7 +234,7 @@ const HomePage = () => {
             );
             queryParams.brand = brandValues.join(',');
         }
-        
+
         // Add seasons as a comma-separated list
         if (selectedFilters.seasons.length > 0) {
             const seasonValues = selectedFilters.seasons.map(season =>
@@ -195,7 +250,7 @@ const HomePage = () => {
             );
             queryParams.tip_avto = vehicleTypeValues.join(',');
         }
-        
+
         // Add models as a comma-separated list
         if (selectedFilters.models.length > 0) {
             const modelValues = selectedFilters.models.map(model =>
@@ -203,12 +258,12 @@ const HomePage = () => {
             );
             queryParams.model = modelValues.join(',');
         }
-        
+
         // Build the URL with path components
         if (pathComponents.length > 0) {
             baseUrl = `${baseUrl}/${pathComponents.join('/')}`;
         }
-        
+
         // Build query string
         const queryString = Object.entries(queryParams)
             .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
@@ -375,6 +430,19 @@ const HomePage = () => {
                             onClearFilters={handleClearFilters}
                         />
                     )}
+
+                    <SelectedFiltersDisplay
+                        selectedFilters={selectedFilters}
+                        onRemoveFilter={handleRemoveFilter}
+                        onClearAll={handleClearFilters}
+                        brands={filterData.brands}
+                        vehicleTypes={VEHICLE_TYPES}
+                        seasons={SEASONS}
+                        widths={filterData.widths}
+                        profils={filterData.profils}
+                        diametrs={filterData.diametrs}
+                        models={filterData.models}
+                    />
 
                     <div className="results-container">
                         {error && (
