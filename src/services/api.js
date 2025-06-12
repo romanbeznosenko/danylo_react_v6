@@ -131,7 +131,7 @@ export const scrapeTires = async (url, pageCount = -1, additionalFilters = null)
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            timeout: 90000, // Longer timeout for complex scrapes (90 seconds)
+            timeout: 300000, // Longer timeout for complex scrapes (90 seconds)
             withCredentials: false
         });
 
