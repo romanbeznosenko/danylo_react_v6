@@ -72,18 +72,18 @@ const SelectedFiltersDisplay = ({
     }
 
     const filterTypeLabels = {
-    brands: 'Бренди',
-    vehicleTypes: 'Тип авто',
-    seasons: 'Сезон',
-    widths: 'Ширина',
-    profils: 'Профіль',
-    diametrs: 'Діаметр',
-    models: 'Модель',
-    priceChanged: 'Зміна ціни',
-    priceChanged3Days: 'Зміни за 3 дні',      // New
-    priceChanged7Days: 'Зміни за 7 днів',     // New
-    changedToday: 'Зміни сьогодні'
-};
+        brands: 'Бренди',
+        vehicleTypes: 'Тип авто',
+        seasons: 'Сезон',
+        widths: 'Ширина',
+        profils: 'Профіль',
+        diametrs: 'Діаметр',
+        models: 'Модель',
+        priceChanged: 'Зміна ціни',
+        priceChanged3Days: 'Зміни за 3 дні',      // New
+        priceChanged7Days: 'Зміни за 7 днів',     // New
+        changedToday: 'Зміни сьогодні'
+    };
 
     return (
         <div className="selected-filters-display">

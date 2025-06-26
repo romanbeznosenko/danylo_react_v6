@@ -164,25 +164,7 @@ const FilterPanel = ({
                                 checked={selectedFilters.priceChanged}
                                 onChange={(e) => onFilterChange('priceChanged', e.target.checked)}
                             />
-                            <span>Show only tires with price changes</span>
-                        </label>
-
-                        <label className="checkbox-item">
-                            <input
-                                type="checkbox"
-                                checked={selectedFilters.priceChanged3Days}
-                                onChange={(e) => onFilterChange('priceChanged3Days', e.target.checked)}
-                            />
-                            <span>Price changed in last 3 days</span>
-                        </label>
-
-                        <label className="checkbox-item">
-                            <input
-                                type="checkbox"
-                                checked={selectedFilters.priceChanged7Days}
-                                onChange={(e) => onFilterChange('priceChanged7Days', e.target.checked)}
-                            />
-                            <span>Price changed in last 7 days</span>
+                            <span>Show only tires with any price changes</span>
                         </label>
 
                         <label className="checkbox-item">
@@ -193,6 +175,28 @@ const FilterPanel = ({
                             />
                             <span>Price changed today</span>
                         </label>
+
+                        <label className="checkbox-item">
+                            <input
+                                type="checkbox"
+                                checked={selectedFilters.priceChanged3Days}
+                                onChange={(e) => onFilterChange('priceChanged3Days', e.target.checked)}
+                            />
+                            <span>Price changed within last 3 days</span>
+                        </label>
+
+                        <label className="checkbox-item">
+                            <input
+                                type="checkbox"
+                                checked={selectedFilters.priceChanged7Days}
+                                onChange={(e) => onFilterChange('priceChanged7Days', e.target.checked)}
+                            />
+                            <span>Price changed within last 7 days</span>
+                        </label>
+
+                        <div className="filter-help">
+                            <small>Note: These filters can overlap. A tire changed today will also appear in "last 3 days" and "last 7 days" filters.</small>
+                        </div>
                     </div>
                 )}
             </div>
