@@ -81,9 +81,17 @@ export const fetchTires = async (params = {}) => {
             });
         }
 
-        // Add priceChanged filter parameter
         if (params.priceChanged) {
             queryParams.append('price_changed', 'true');
+        }
+
+        // Add new price change filters
+        if (params.priceChanged3Days) {
+            queryParams.append('price_changed_3_days', 'true');
+        }
+
+        if (params.priceChanged7Days) {
+            queryParams.append('price_changed_7_days', 'true');
         }
 
         // Add changedToday filter parameter

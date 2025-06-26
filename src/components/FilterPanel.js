@@ -148,6 +148,54 @@ const FilterPanel = ({
                     />
                 )}
             </div>
+            <div className={`filter-section ${expandedFilter === 'priceChanges' ? 'expanded' : ''}`}>
+                <h3 onClick={() => toggleFilter('priceChanges')}>
+                    Price Changes
+                    {(selectedFilters.priceChanged3Days || selectedFilters.priceChanged7Days || selectedFilters.priceChanged) &&
+                        <span className="selected-count">(Active)</span>}
+                    <span className="toggle-icon">{expandedFilter === 'priceChanges' ? '−' : '+'}</span>
+                </h3>
+
+                {expandedFilter === 'priceChanges' && (
+                    <div className="price-change-options">
+                        <label className="checkbox-item">
+                            <input
+                                type="checkbox"
+                                checked={selectedFilters.priceChanged}
+                                onChange={(e) => onFilterChange('priceChanged', e.target.checked)}
+                            />
+                            <span>Show only tires with price changes</span>
+                        </label>
+
+                        <label className="checkbox-item">
+                            <input
+                                type="checkbox"
+                                checked={selectedFilters.priceChanged3Days}
+                                onChange={(e) => onFilterChange('priceChanged3Days', e.target.checked)}
+                            />
+                            <span>Price changed in last 3 days</span>
+                        </label>
+
+                        <label className="checkbox-item">
+                            <input
+                                type="checkbox"
+                                checked={selectedFilters.priceChanged7Days}
+                                onChange={(e) => onFilterChange('priceChanged7Days', e.target.checked)}
+                            />
+                            <span>Price changed in last 7 days</span>
+                        </label>
+
+                        <label className="checkbox-item">
+                            <input
+                                type="checkbox"
+                                checked={selectedFilters.changedToday}
+                                onChange={(e) => onFilterChange('changedToday', e.target.checked)}
+                            />
+                            <span>Price changed today</span>
+                        </label>
+                    </div>
+                )}
+            </div>
 
             <button
                 className="search-button"
@@ -173,6 +221,10 @@ const FilterPanel = ({
                             onFilterChange('profils', []);
                             onFilterChange('diametrs', []);
                             onFilterChange('models', []);
+                            onFilterChange('priceChanged', false);
+                            onFilterChange('priceChanged3Days', false);
+                            onFilterChange('priceChanged7Days', false);
+                            onFilterChange('changedToday', false);
                         }}
                     >
                         Clear Filters

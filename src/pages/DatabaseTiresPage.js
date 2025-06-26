@@ -87,6 +87,8 @@ const DatabaseTiresPage = () => {
         diametrs: [],
         models: [],
         priceChanged: false,
+        priceChanged3Days: false,  // New
+        priceChanged7Days: false,  // New
         changedToday: false
     });
 
@@ -249,6 +251,8 @@ const DatabaseTiresPage = () => {
             diametrs: [],
             models: [],
             priceChanged: false,
+            priceChanged3Days: false,  // New
+            priceChanged7Days: false,  // New
             changedToday: false
         });
     };
@@ -276,6 +280,8 @@ const DatabaseTiresPage = () => {
             diametrs: selectedFilters.diametrs,
             models: selectedFilters.models,
             priceChanged: selectedFilters.priceChanged,
+            priceChanged3Days: selectedFilters.priceChanged3Days,  // New
+            priceChanged7Days: selectedFilters.priceChanged7Days,  // New
             changedToday: selectedFilters.changedToday
         };
 

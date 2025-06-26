@@ -90,3 +90,29 @@
 .clear-button:hover {
     background-color: #e0e0e0;
 }
+
+.price-change-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.price-change-options .checkbox-item {
+    padding: 6px 0;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.price-change-options .checkbox-item:hover {
+    background-color: #f0f0f0;
+    padding-left: 4px;
+}
+
+.price-change-options input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.price-change-options span {
+    font-size: 14px;
+    color: #333;
+}
