@@ -439,18 +439,6 @@ const DatabaseTiresPage = () => {
                             />
                         )}
 
-                        <div className="filter-controls">
-                            <PriceChangeFilter
-                                checked={selectedFilters.priceChanged}
-                                onChange={handlePriceChangedToggle}
-                            />
-
-                            <TodayChangeFilter
-                                checked={selectedFilters.changedToday}
-                                onChange={handleChangedTodayToggle}
-                            />
-                        </div>
-
                         {loading ? (
                             <LoadingSpinner />
                         ) : (
