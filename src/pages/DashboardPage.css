@@ -1,0 +1,357 @@
+/* pages/DashboardPage.css */
+.dashboard-container {
+    min-height: 100vh;
+    background: #f8fafc;
+    padding: 20px;
+}
+
+.dashboard-content {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    padding: 24px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-header h1 {
+    margin: 0;
+    font-size: 28px;
+    color: #1f2937;
+    font-weight: 700;
+}
+
+.logout-button {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.logout-button:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+}
+
+.user-info-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 32px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.user-info-card h2 {
+    margin: 0 0 20px 0;
+    color: #1f2937;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.label {
+    font-weight: 600;
+    color: #6b7280;
+}
+
+.value {
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.role-admin {
+    color: #dc2626;
+    font-weight: 700;
+}
+
+.role-user {
+    color: #059669;
+    font-weight: 600;
+}
+
+.role-guest {
+    color: #6b7280;
+    font-weight: 600;
+}
+
+.status-approved {
+    color: #059669;
+    font-weight: 600;
+}
+
+.status-pending {
+    color: #d97706;
+    font-weight: 600;
+}
+
+.status-rejected {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.status-message {
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 32px;
+}
+
+.status-message.pending {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+}
+
+.status-message.rejected {
+    background: #fee2e2;
+    border: 1px solid #ef4444;
+}
+
+.status-message h3 {
+    margin: 0 0 8px 0;
+    color: #1f2937;
+}
+
+.status-message p {
+    margin: 0;
+    color: #6b7280;
+}
+
+.dashboard-actions {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-actions h2 {
+    margin: 0 0 24px 0;
+    color: #1f2937;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.action-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.action-card {
+    background: #f8fafc;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 24px;
+    transition: all 0.2s ease;
+}
+
+.action-card:hover {
+    border-color: #4f46e5;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.action-card.admin-card {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-color: #f59e0b;
+}
+
+.action-card h3 {
+    margin: 0 0 12px 0;
+    color: #1f2937;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.action-card p {
+    margin: 0 0 16px 0;
+    color: #6b7280;
+    line-height: 1.5;
+}
+
+.action-button {
+    display: inline-block;
+    background: #4f46e5;
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.action-button:hover {
+    background: #4338ca;
+    transform: translateY(-1px);
+}
+
+.admin-button {
+    background: #f59e0b;
+}
+
+.admin-button:hover {
+    background: #d97706;
+}
+
+/* Pending Approval Page */
+.pending-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8fafc;
+    padding: 20px;
+}
+
+.pending-content {
+    text-align: center;
+    background: white;
+    border-radius: 12px;
+    padding: 48px;
+    max-width: 500px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.pending-icon {
+    font-size: 64px;
+    margin-bottom: 24px;
+}
+
+.pending-content h1 {
+    font-size: 28px;
+    color: #1f2937;
+    margin: 0 0 24px 0;
+    font-weight: 700;
+}
+
+.pending-content p {
+    color: #6b7280;
+    line-height: 1.6;
+    margin: 0 0 16px 0;
+}
+
+.pending-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 32px;
+}
+
+.dashboard-button {
+    background: #4f46e5;
+    color: white;
+    text-decoration: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.dashboard-button:hover {
+    background: #4338ca;
+    transform: translateY(-1px);
+}
+
+/* Loading and Access Denied */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: #f8fafc;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e5e7eb;
+    border-top: 4px solid #4f46e5;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+}
+
+.access-denied {
+    text-align: center;
+    padding: 48px;
+    background: white;
+    border-radius: 12px;
+    margin: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.access-denied h2 {
+    color: #dc2626;
+    margin-bottom: 16px;
+}
+
+.access-denied p {
+    color: #6b7280;
+    margin-bottom: 24px;
+}
+
+.access-denied a {
+    color: #4f46e5;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .dashboard-header {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+    }
+
+    .action-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .pending-actions {
+        flex-direction: column;
+    }
+
+    .detail-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+}

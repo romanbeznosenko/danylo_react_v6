@@ -1,14 +1,120 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://danylofastapi-production.up.railway.app/api';
-// const API_BASE_URL = 'http://127.0.0.1:8080/api';
+// const API_BASE_URL = 'https://danylofastapi-production.up.railway.app/api';
+const API_BASE_URL = 'http://127.0.0.1:8080/api';
 const SCRAPER_URL = 'https://danyloscrape-production.up.railway.app/scrape';
 // const SCRAPER_URL = 'http://0.0.0.0:8081/scrape';
+
+// Create axios instance with interceptors for authentication
+const apiClient = axios.create({
+    baseURL: API_BASE_URL,
+});
+
+// Add request interceptor to include auth token
+apiClient.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+// Add response interceptor to handle auth errors
+apiClient.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            // Token is invalid or expired
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
+        return Promise.reject(error);
+    }
+);
+
+// Authentication API calls
+export const authAPI = {
+    login: async (email, password) => {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/auth/login`, {
+                email,
+                password
+            });
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    register: async (email, password, role = 'guest') => {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/auth/register`, {
+                email,
+                password,
+                role
+            });
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    getCurrentUser: async () => {
+        try {
+            const response = await apiClient.get('/auth/me');
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    }
+};
+
+// Admin API calls
+export const adminAPI = {
+    getUsers: async (page = 1, perPage = 20, statusFilter = null) => {
+        try {
+            let url = `/admin/users?page=${page}&per_page=${perPage}`;
+            if (statusFilter) {
+                url += `&status_filter=${statusFilter}`;
+            }
+            const response = await apiClient.get(url);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    approveUser: async (userId, status) => {
+        try {
+            const response = await apiClient.post('/admin/users/approve', {
+                user_id: userId,
+                status: status
+            });
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    createBackup: async () => {
+        try {
+            const response = await apiClient.post('/admin/backup');
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    }
+};
 
 export const fetchBrands = async () => {
     try {
         console.info(`Link: ${API_BASE_URL}/brands`);
-        const response = await axios.get(`${API_BASE_URL}/brands`);
+        const response = await apiClient.get('/brands');
         return response.data;
     } catch (error) {
         console.error('Error fetching brands:', error);
@@ -99,10 +205,10 @@ export const fetchTires = async (params = {}) => {
             queryParams.append('changed_today', 'true');
         }
 
-        const url = `${API_BASE_URL}/tires${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+        const url = `/tires${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
         console.log('Fetching tires with URL:', url);
 
-        const response = await axios.get(url);
+        const response = await apiClient.get(url);
         return response.data;
     } catch (error) {
         console.error('Error fetching tires:', error);
@@ -192,7 +298,7 @@ export const scrapeTires = async (url, pageCount = -1, additionalFilters = null)
 
 export const addTiresToDatabase = async (tires) => {
     try {
-        const response = await axios.post(`${API_BASE_URL}/tires`, tires);
+        const response = await apiClient.post('/tires', tires);
         return response.data;
     } catch (error) {
         console.error('Error adding tires to database:', error);
@@ -203,7 +309,7 @@ export const addTiresToDatabase = async (tires) => {
 // Additional helper functions for fetching specific tire attributes
 export const fetchTireWidths = async () => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/tires/width`);
+        const response = await apiClient.get('/tires/width');
         return response.data;
     } catch (error) {
         console.error('Error fetching tire widths:', error);
@@ -213,7 +319,7 @@ export const fetchTireWidths = async () => {
 
 export const fetchTireProfils = async () => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/tires/profil`);
+        const response = await apiClient.get('/tires/profil');
         return response.data;
     } catch (error) {
         console.error('Error fetching tire profiles:', error);
@@ -223,7 +329,7 @@ export const fetchTireProfils = async () => {
 
 export const fetchTireDiametrs = async () => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/tires/diametr`);
+        const response = await apiClient.get('/tires/diametr');
         return response.data;
     } catch (error) {
         console.error('Error fetching tire diameters:', error);
@@ -233,7 +339,7 @@ export const fetchTireDiametrs = async () => {
 
 export const fetchTireModels = async () => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/tires/model`);
+        const response = await apiClient.get('/tires/model');
         return response.data;
     } catch (error) {
         console.error('Error fetching tire models:', error);
@@ -243,7 +349,7 @@ export const fetchTireModels = async () => {
 
 export const fetchTirePriceHistory = async (tireId) => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/tires/${tireId}/price_history`);
+        const response = await apiClient.get(`/tires/${tireId}/price_history`);
         return response.data;
     } catch (error) {
         console.error('Error fetching tire price history:', error);
