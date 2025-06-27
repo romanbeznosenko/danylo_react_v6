@@ -1,3 +1,4 @@
+// App.js - Corrected with proper imports
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
@@ -7,7 +8,8 @@ import DatabaseTiresPage from './pages/DatabaseTiresPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
-import { PendingApprovalPage, ProtectedRoute } from './pages/DashboardPage';
+import PendingApprovalPage from './pages/PendingApprovalPage';
+import ProtectedRoute from './components/ProtectedRoute';
 import AdminPanel from './components/AdminPanel';
 import './App.css';
 
@@ -57,12 +59,12 @@ function AppWithHeader() {
             }
           />
 
-          {/* Home page (scraper) - requires user or admin role and approval */}
+          {/* Home page (scraper) - accessible to all approved users including guests */}
           <Route
             path="/"
             element={
               <ProtectedRoute
-                requiredRoles={['user', 'admin']}
+                requiredRoles={['guest', 'user', 'admin']}
                 requireApproval={true}
               >
                 <HomePage />

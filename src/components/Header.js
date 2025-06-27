@@ -1,10 +1,11 @@
+// components/Header.js - Updated with authentication
 import React from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import './Header.css';
 
 const Header = () => {
-    const { user, logout, canAccessDatabase, isAdmin } = useAuth();
+    const { user, logout, canAccessDatabase, canScrape, isAdmin } = useAuth();
     const navigate = useNavigate();
 
     const handleLogout = () => {
@@ -32,25 +33,26 @@ const Header = () => {
                                     </NavLink>
                                 </li>
 
+                                {canScrape() && (
+                                    <li>
+                                        <NavLink
+                                            to="/"
+                                            className={({ isActive }) => isActive ? 'active' : ''}
+                                        >
+                                            Scrape Tires
+                                        </NavLink>
+                                    </li>
+                                )}
+
                                 {canAccessDatabase() && (
-                                    <>
-                                        <li>
-                                            <NavLink
-                                                to="/"
-                                                className={({ isActive }) => isActive ? 'active' : ''}
-                                            >
-                                                Scrape Tires
-                                            </NavLink>
-                                        </li>
-                                        <li>
-                                            <NavLink
-                                                to="/database"
-                                                className={({ isActive }) => isActive ? 'active' : ''}
-                                            >
-                                                Database
-                                            </NavLink>
-                                        </li>
-                                    </>
+                                    <li>
+                                        <NavLink
+                                            to="/database"
+                                            className={({ isActive }) => isActive ? 'active' : ''}
+                                        >
+                                            Database
+                                        </NavLink>
+                                    </li>
                                 )}
 
                                 {isAdmin() && (

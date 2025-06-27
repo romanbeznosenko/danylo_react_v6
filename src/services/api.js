@@ -1,7 +1,8 @@
+// services/api.js - Updated with authentication
 import axios from 'axios';
 
-// const API_BASE_URL = 'https://danylofastapi-production.up.railway.app/api';
-const API_BASE_URL = 'http://127.0.0.1:8080/api';
+const API_BASE_URL = 'https://danylofastapi-production.up.railway.app/api';
+// const API_BASE_URL = 'http://127.0.0.1:8080/api';
 const SCRAPER_URL = 'https://danyloscrape-production.up.railway.app/scrape';
 // const SCRAPER_URL = 'http://0.0.0.0:8081/scrape';
 
@@ -40,37 +41,25 @@ apiClient.interceptors.response.use(
 // Authentication API calls
 export const authAPI = {
     login: async (email, password) => {
-        try {
-            const response = await axios.post(`${API_BASE_URL}/auth/login`, {
-                email,
-                password
-            });
-            return response.data;
-        } catch (error) {
-            throw error;
-        }
+        const response = await axios.post(`${API_BASE_URL}/auth/login`, {
+            email,
+            password
+        });
+        return response.data;
     },
 
     register: async (email, password, role = 'guest') => {
-        try {
-            const response = await axios.post(`${API_BASE_URL}/auth/register`, {
-                email,
-                password,
-                role
-            });
-            return response.data;
-        } catch (error) {
-            throw error;
-        }
+        const response = await axios.post(`${API_BASE_URL}/auth/register`, {
+            email,
+            password,
+            role
+        });
+        return response.data;
     },
 
     getCurrentUser: async () => {
-        try {
-            const response = await apiClient.get('/auth/me');
-            return response.data;
-        } catch (error) {
-            throw error;
-        }
+        const response = await apiClient.get('/auth/me');
+        return response.data;
     }
 };
 

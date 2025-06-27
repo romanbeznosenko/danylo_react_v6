@@ -1,9 +1,10 @@
+// components/auth/RegisterForm.js
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
-import './AuthForms.css';
+import { Link } from 'react-router-dom';
+import './AuthForm.css';
 
-export const RegisterForm = () => {
+const RegisterForm = () => {
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -162,3 +163,5 @@ export const RegisterForm = () => {
         </div>
     );
 };
+
+export default RegisterForm;

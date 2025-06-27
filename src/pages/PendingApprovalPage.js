@@ -1,4 +1,10 @@
-export const PendingApprovalPage = () => {
+// pages/PendingApprovalPage.js
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import './DashboardPage.css';
+
+const PendingApprovalPage = () => {
     const { user, logout } = useAuth();
 
     return (
@@ -23,3 +29,5 @@ export const PendingApprovalPage = () => {
         </div>
     );
 };
+
+export default PendingApprovalPage;

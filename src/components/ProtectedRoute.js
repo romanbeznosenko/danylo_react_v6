@@ -1,4 +1,9 @@
-export const ProtectedRoute = ({ children, requiredRoles = [], requireApproval = true }) => {
+// components/ProtectedRoute.js
+import React from 'react';
+import { Navigate, Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+
+const ProtectedRoute = ({ children, requiredRoles = [], requireApproval = true }) => {
     const { user, loading, hasRole, isApproved } = useAuth();
 
     if (loading) {
@@ -31,4 +36,4 @@ export const ProtectedRoute = ({ children, requiredRoles = [], requireApproval =
     return children;
 };
 
-export default DashboardPage;
+export default ProtectedRoute;

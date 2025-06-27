@@ -219,6 +219,46 @@
     background: #d97706;
 }
 
+.guest-info {
+    background: linear-gradient(135deg, #e0f2fe 0%, #b3e5fc 100%);
+    border-color: #29b6f6;
+}
+
+.guest-permissions {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.permission {
+    font-size: 14px;
+    font-weight: 500;
+    padding: 4px 0;
+}
+
+.permission.allowed {
+    color: #2e7d32;
+}
+
+.permission.denied {
+    color: #d32f2f;
+}
+
+.guest-notice {
+    margin-top: 12px;
+    padding: 12px;
+    background: #e3f2fd;
+    border: 1px solid #90caf9;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.guest-notice small {
+    color: #1565c0;
+    font-weight: 500;
+}
+
 /* Pending Approval Page */
 .pending-container {
     min-height: 100vh;
