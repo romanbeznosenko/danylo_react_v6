@@ -481,7 +481,7 @@ const DatabaseTiresPage = () => {
                                                         <tr key={tire.tire_id} className={isChangedToday(tire) ? 'today-change' : ''}>
                                                             <td>{tire.brand_name}</td>
                                                             <td>{tire.model}</td>
-                                                            <td>{tire.width}/{tire.profil} R{tire.diametr}</td>
+                                                            <td>{tire.width}/{tire.profil} {tire.diametr}</td>
                                                             <td>{tire.season}</td>
                                                             <td className={getPriceChangeClass(tire)}>
                                                                 {tire.price} UAH
