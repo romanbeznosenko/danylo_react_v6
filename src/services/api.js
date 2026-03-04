@@ -1,347 +1,184 @@
-// services/api.js - Updated with authentication
 import axios from 'axios';
 
-const API_BASE_URL = 'https://danylofastapi-production.up.railway.app/api';
-// const API_BASE_URL = 'http://127.0.0.1:8080/api';
-const SCRAPER_URL = 'https://danyloscrape-production.up.railway.app/scrape';
-// const SCRAPER_URL = 'http://0.0.0.0:8081/scrape';
+const API_BASE_URL = 'https://tire-parser-production.up.railway.app';
 
-// Create axios instance with interceptors for authentication
-const apiClient = axios.create({
-    baseURL: API_BASE_URL,
-});
+const apiClient = axios.create({ baseURL: API_BASE_URL });
 
-// Add request interceptor to include auth token
-apiClient.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
-
-// Add response interceptor to handle auth errors
-apiClient.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
-            // Token is invalid or expired
-            localStorage.removeItem('token');
-            window.location.href = '/login';
-        }
-        return Promise.reject(error);
-    }
-);
-
-// Authentication API calls
+// ── AUTH (заглушка, авторизация отключена) ───────────────────────────────────
 export const authAPI = {
     login: async (email, password) => {
-        const response = await axios.post(`${API_BASE_URL}/auth/login`, {
-            email,
-            password
-        });
-        return response.data;
+        return {
+            access_token: "mock-token",
+            user: { id: 1, email: email, role: "admin", status: "approved" }
+        };
     },
-
     register: async (email, password, role = 'guest') => {
-        const response = await axios.post(`${API_BASE_URL}/auth/register`, {
-            email,
-            password,
-            role
-        });
-        return response.data;
+        return { message: "Registered successfully" };
     },
-
     getCurrentUser: async () => {
-        const response = await apiClient.get('/auth/me');
-        return response.data;
+        const stored = localStorage.getItem('user');
+        if (stored) return JSON.parse(stored);
+        return null;
     }
 };
 
-// Admin API calls
-export const adminAPI = {
-    getUsers: async (page = 1, perPage = 20, statusFilter = null) => {
-        try {
-            let url = `/admin/users?page=${page}&per_page=${perPage}`;
-            if (statusFilter) {
-                url += `&status_filter=${statusFilter}`;
-            }
-            const response = await apiClient.get(url);
-            return response.data;
-        } catch (error) {
-            throw error;
-        }
-    },
-
-    approveUser: async (userId, status) => {
-        try {
-            const response = await apiClient.post('/admin/users/approve', {
-                user_id: userId,
-                status: status
-            });
-            return response.data;
-        } catch (error) {
-            throw error;
-        }
-    },
-
-    createBackup: async () => {
-        try {
-            const response = await apiClient.post('/admin/backup');
-            return response.data;
-        } catch (error) {
-            throw error;
-        }
-    }
-};
-
+// ── BRANDS ───────────────────────────────────────────────────────────────────
 export const fetchBrands = async () => {
     try {
-        console.info(`Link: ${API_BASE_URL}/brands`);
-        const response = await apiClient.get('/brands');
-        return response.data;
+        const response = await apiClient.get('/get_all_brands');
+        return response.data.brands.map(b => ({ brand_name: b.name, brand_html_id: b.brand_html_id }));
     } catch (error) {
         console.error('Error fetching brands:', error);
         throw error;
     }
 };
 
+// ── TIRES ────────────────────────────────────────────────────────────────────
 export const fetchTires = async (params = {}) => {
     try {
-        const queryParams = new URLSearchParams();
+        const response = await apiClient.get('/get_tires');
+        let tires = response.data.tires.map(t => ({
+            tire_id: t[0],
+            tire_name: t[1],
+            brand_name: t[2],
+            price: t[3],
+            width: t[4],
+            profil: t[5],
+            diametr: t[6],
+            model: t[7],
+            season: t[8],
+            link: t[9],
+        }));
 
-        // Add pagination parameters
-        if (params.page) {
-            queryParams.append('page', params.page.toString());
-        }
-
-        if (params.per_page) {
-            queryParams.append('per_page', params.per_page.toString());
-        }
-
-        // Add sorting parameters
-        if (params.sort_by) {
-            queryParams.append('sort_by', params.sort_by);
-        }
-
-        if (params.sort_order) {
-            queryParams.append('sort_order', params.sort_order);
-        }
-
-        // Add filter parameters
+        // Client-side filtering
         if (params.brand_name && params.brand_name.length > 0) {
-            params.brand_name.forEach(brand => {
-                const brandName = typeof brand === 'object' ? brand.brand_name : brand;
-                queryParams.append('brand_name', brandName);
-            });
+            const brands = params.brand_name.map(b => typeof b === 'object' ? b.brand_name : b);
+            tires = tires.filter(t => brands.includes(t.brand_name));
         }
-
         if (params.seasons && params.seasons.length > 0) {
-            params.seasons.forEach(season => {
-                const seasonName = typeof season === 'object' ? season.id : season;
-                queryParams.append('seasons', seasonName);
-            });
+            tires = tires.filter(t => params.seasons.includes(t.season));
         }
-
         if (params.widths && params.widths.length > 0) {
-            params.widths.forEach(width => {
-                const widthValue = typeof width === 'object' ? width.width : width;
-                queryParams.append('widths', widthValue);
-            });
+            const widths = params.widths.map(w => typeof w === 'object' ? w.width : w);
+            tires = tires.filter(t => widths.includes(t.width));
         }
-
         if (params.profils && params.profils.length > 0) {
-            params.profils.forEach(profil => {
-                const profilValue = typeof profil === 'object' ? profil.profil : profil;
-                queryParams.append('profils', profilValue);
-            });
+            const profils = params.profils.map(p => typeof p === 'object' ? p.profil : p);
+            tires = tires.filter(t => profils.includes(t.profil));
         }
-
         if (params.diametrs && params.diametrs.length > 0) {
-            params.diametrs.forEach(diametr => {
-                const diametrValue = typeof diametr === 'object' ? diametr.diametr : diametr;
-                queryParams.append('diametrs', diametrValue);
-            });
+            const diametrs = params.diametrs.map(d => typeof d === 'object' ? d.diametr : d);
+            tires = tires.filter(t => diametrs.includes(t.diametr));
         }
-
         if (params.models && params.models.length > 0) {
-            params.models.forEach(model => {
-                const modelValue = typeof model === 'object' ? model.model : model;
-                queryParams.append('models', modelValue);
+            const models = params.models.map(m => typeof m === 'object' ? m.model : m);
+            tires = tires.filter(t => models.includes(t.model));
+        }
+
+        // Sorting
+        if (params.sort_by) {
+            tires.sort((a, b) => {
+                const field = params.sort_by === 'brand' ? 'brand_name' : params.sort_by;
+                if (params.sort_order === 'desc') return b[field] > a[field] ? 1 : -1;
+                return a[field] > b[field] ? 1 : -1;
             });
         }
 
-        if (params.priceChanged) {
-            queryParams.append('price_changed', 'true');
-        }
+        // Pagination
+        const total = tires.length;
+        const page = params.page || 1;
+        const per_page = params.per_page || 20;
+        const start = (page - 1) * per_page;
+        const paginated = tires.slice(start, start + per_page);
 
-        // Add new price change filters
-        if (params.priceChanged3Days) {
-            queryParams.append('price_changed_3_days', 'true');
-        }
-
-        if (params.priceChanged7Days) {
-            queryParams.append('price_changed_7_days', 'true');
-        }
-
-        // Add changedToday filter parameter
-        if (params.changedToday) {
-            queryParams.append('changed_today', 'true');
-        }
-
-        const url = `/tires${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-        console.log('Fetching tires with URL:', url);
-
-        const response = await apiClient.get(url);
-        return response.data;
+        return {
+            tires: paginated,
+            total,
+            page,
+            per_page,
+            total_pages: Math.ceil(total / per_page)
+        };
     } catch (error) {
         console.error('Error fetching tires:', error);
         throw error;
     }
 };
 
-// Improved scrapeTires function that matches Django implementation
-export const scrapeTires = async (url, pageCount = -1, additionalFilters = null) => {
+// ── SCRAPER ──────────────────────────────────────────────────────────────────
+export const scrapeTires = async (url, pageCount = 1) => {
     try {
-        console.log('Scraping tires from URL:', url);
-        console.log('Page count:', pageCount);
-        console.log('Additional filters:', additionalFilters);
-
-        // Create the request payload in the same format as Django
-        const requestPayload = {
+        const response = await apiClient.post('/insert_tires', {
             url: url,
             page_count: pageCount
-        };
-
-        // Add additional filters if provided
-        if (additionalFilters) {
-            requestPayload.filters = additionalFilters;
-        }
-
-        console.log('Request payload:', requestPayload);
-
-        // Add debug info to monitor network request
-        console.log('Sending POST request to:', SCRAPER_URL);
-
-        // Match the exact request format used in Django
-        const response = await axios.post(SCRAPER_URL, requestPayload, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            timeout: 300000, // Longer timeout for complex scrapes (90 seconds)
-            withCredentials: false
         });
-
-        console.log('Scraper response status:', response.status);
-        console.log('Scraper response headers:', response.headers);
-
-        // Log the first part of the response data for debugging
-        const responsePreview = response.data ?
-            JSON.stringify(response.data).substring(0, 200) + '...' :
-            'No response data';
-        console.log('Scraper response preview:', responsePreview);
-
-        // Check for error message in the response
-        if (response.data && response.data.error) {
-            console.error('Scraper returned an error:', response.data.error);
-            throw new Error(response.data.error);
-        }
-
-        // Check for the expected data format
-        if (!response.data || !response.data.data) {
-            console.error('Unexpected response format:', response.data);
-            throw new Error('The scraper response does not contain the expected data format');
-        }
-
-        // Return the data in the same structure expected by the component
-        return response.data;
+        // insert_tires returns task_id, poll for completion
+        const task_id = response.data.task_id;
+        return await pollTaskStatus(task_id);
     } catch (error) {
         console.error('Error scraping tires:', error);
+        throw error;
+    }
+};
 
-        // Detailed error handling
-        if (error.response) {
-            // The request was made and the server responded with a status code
-            // that falls out of the range of 2xx
-            console.error('Response status:', error.response.status);
-            console.error('Response headers:', error.response.headers);
-            console.error('Response data:', error.response.data);
-            throw new Error(`Server error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
-        } else if (error.request) {
-            // The request was made but no response was received
-            console.error('Request sent but no response received');
-            console.error('Request details:', error.request);
-            throw new Error('No response received from scraper server. Please check if it is running.');
-        } else {
-            // Something happened in setting up the request that triggered an Error
-            console.error('Error message:', error.message);
-            throw error;
+const pollTaskStatus = async (task_id) => {
+    for (let i = 0; i < 60; i++) {
+        await new Promise(r => setTimeout(r, 3000));
+        const response = await apiClient.get(`/task_status/${task_id}`);
+        const status = response.data;
+        if (status.status === 'completed') {
+            // Fetch and return the tires
+            const tiresResp = await apiClient.get('/get_tires');
+            const tires = tiresResp.data.tires.map(t => ({
+                id: t[0], name: t[1], brand: t[2], price: t[3],
+                width: t[4], profil: t[5], diametr: t[6],
+                model: t[7], season: t[8], link: t[9]
+            }));
+            return { data: tires };
+        }
+        if (status.status === 'failed') {
+            throw new Error(status.error || 'Scraping failed');
         }
     }
+    throw new Error('Timeout waiting for scraper');
 };
 
+// ── ADD TIRES TO DATABASE ────────────────────────────────────────────────────
 export const addTiresToDatabase = async (tires) => {
-    try {
-        const response = await apiClient.post('/tires', tires);
-        return response.data;
-    } catch (error) {
-        console.error('Error adding tires to database:', error);
-        throw error;
-    }
+    // Tires already inserted during scraping, just return success
+    return { message: "Tires already saved during scraping" };
 };
 
-// Additional helper functions for fetching specific tire attributes
+// ── TIRE ATTRIBUTES (client-side from all tires) ─────────────────────────────
 export const fetchTireWidths = async () => {
-    try {
-        const response = await apiClient.get('/tires/width');
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching tire widths:', error);
-        throw error;
-    }
+    const response = await apiClient.get('/get_tires');
+    const widths = [...new Set(response.data.tires.map(t => t[4]).filter(Boolean))].sort();
+    return widths.map(w => ({ width: w }));
 };
 
 export const fetchTireProfils = async () => {
-    try {
-        const response = await apiClient.get('/tires/profil');
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching tire profiles:', error);
-        throw error;
-    }
+    const response = await apiClient.get('/get_tires');
+    const profils = [...new Set(response.data.tires.map(t => t[5]).filter(Boolean))].sort();
+    return profils.map(p => ({ profil: p }));
 };
 
 export const fetchTireDiametrs = async () => {
-    try {
-        const response = await apiClient.get('/tires/diametr');
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching tire diameters:', error);
-        throw error;
-    }
+    const response = await apiClient.get('/get_tires');
+    const diametrs = [...new Set(response.data.tires.map(t => t[6]).filter(Boolean))].sort();
+    return diametrs.map(d => ({ diametr: d }));
 };
 
 export const fetchTireModels = async () => {
-    try {
-        const response = await apiClient.get('/tires/model');
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching tire models:', error);
-        throw error;
-    }
+    const response = await apiClient.get('/get_tires');
+    const models = [...new Set(response.data.tires.map(t => t[7]).filter(Boolean))].sort();
+    return models.map(m => ({ model: m }));
 };
 
 export const fetchTirePriceHistory = async (tireId) => {
-    try {
-        const response = await apiClient.get(`/tires/${tireId}/price_history`);
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching tire price history:', error);
-        throw error;
-    }
+    return { price_history: [] };
+};
+
+export const adminAPI = {
+    getUsers: async () => ({ users: [], total: 0 }),
+    approveUser: async () => ({}),
+    createBackup: async () => ({})
 };
