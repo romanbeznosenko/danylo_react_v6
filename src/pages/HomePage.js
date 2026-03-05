@@ -278,6 +278,8 @@ const HomePage = () => {
     const handleSearch = async () => {
         setLoading(true);
         setError(null);
+        setTires([]);
+        setFiltersApplied(false);
 
         try {
             // Generate the URL for the scraper based on filters
