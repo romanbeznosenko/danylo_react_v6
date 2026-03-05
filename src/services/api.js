@@ -4,7 +4,7 @@ const API_BASE_URL = 'https://tire-parser-production.up.railway.app';
 
 const apiClient = axios.create({ 
     baseURL: API_BASE_URL,
-    timeout: 30000
+    timeout: 900000
 });
 
 // ── AUTH (заглушка) ───────────────────────────────────────────────────────────
