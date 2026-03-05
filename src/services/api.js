@@ -136,17 +136,12 @@ const pollTaskStatus = async (task_id) => {
         await new Promise(r => setTimeout(r, 5000));
         const response = await apiClient.get(`/task_status/${task_id}`);
         const status = response.data;
-        if (status.status === 'completed' || status.status === 'not_found') {
+        if (status.status === 'completed') {
             tiresCache = null;
-            const tiresResp = await apiClient.get('/get_tires');
-            const tires = tiresResp.data.tires.map(t => ({
-                id: t[0], name: t[1], brand: t[2], price: t[3],
-                width: t[4], profil: t[5], diametr: t[6],
-                model: t[7], season: t[8], link: t[9]
-            }));
-            return { data: tires };
+            return { data: status.tires || [] };
         }
         if (status.status === 'failed') throw new Error(status.error || 'Scraping failed');
+        if (status.status === 'not_found') throw new Error('Task not found - server may have restarted');
     }
     throw new Error('Timeout');
 };
