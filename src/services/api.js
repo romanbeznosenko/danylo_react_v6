@@ -4,7 +4,7 @@ const API_BASE_URL = 'https://tire-parser-production.up.railway.app';
 
 const apiClient = axios.create({ 
     baseURL: API_BASE_URL,
-    timeout: 900000
+    timeout: 600000
 });
 
 export const authAPI = {
@@ -118,10 +118,11 @@ const pollTaskStatus = async (task_id) => {
         const status = response.data;
         if (status.status === 'completed') {
             tiresCache = null;
-            return { data: status.tires || [] };
+            const resultResp = await apiClient.get(`/task_result/${task_id}`);
+            return { data: resultResp.data.tires || [] };
         }
         if (status.status === 'failed') throw new Error(status.error || 'Scraping failed');
-        if (status.status === 'not_found') throw new Error('Task not found - server may have restarted');
+        if (status.status === 'not_found') throw new Error('Task not found');
     }
     throw new Error('Timeout');
 };
