@@ -7,7 +7,6 @@ const apiClient = axios.create({
     timeout: 900000
 });
 
-// ── AUTH (заглушка) ───────────────────────────────────────────────────────────
 export const authAPI = {
     login: async (email, password) => ({
         access_token: "mock-token",
@@ -20,7 +19,6 @@ export const authAPI = {
     }
 };
 
-// ── SHARED CACHE ──────────────────────────────────────────────────────────────
 let tiresCache = null;
 const getAllTiresRaw = async () => {
     if (tiresCache) return tiresCache;
@@ -29,7 +27,6 @@ const getAllTiresRaw = async () => {
     return tiresCache;
 };
 
-// ── BRANDS ────────────────────────────────────────────────────────────────────
 export const fetchBrands = async () => {
     const response = await apiClient.get('/get_all_brands');
     const brands = (response.data.brands || []).map(b => ({
@@ -39,7 +36,6 @@ export const fetchBrands = async () => {
     return { brands };
 };
 
-// ── TIRE ATTRIBUTES ───────────────────────────────────────────────────────────
 export const fetchTireWidths = async () => {
     const tires = await getAllTiresRaw();
     const widths = [...new Set(tires.map(t => t[4]).filter(Boolean))].sort();
@@ -64,7 +60,6 @@ export const fetchTireModels = async () => {
     return { models: models.map(m => ({ model: m })) };
 };
 
-// ── TIRES ─────────────────────────────────────────────────────────────────────
 export const fetchTires = async (params = {}) => {
     const allTires = await getAllTiresRaw();
     let tires = allTires.map(t => ({
@@ -110,27 +105,12 @@ export const fetchTires = async (params = {}) => {
     return { tires: tires.slice(start, start + per_page), total, page, per_page, total_pages: Math.ceil(total / per_page) };
 };
 
-// ── SCRAPER ───────────────────────────────────────────────────────────────────
-export const scrapeTires = async (url, pageCount = 1) => {
+export const scrapeTires = async (url, pageCount = 1, filters = {}) => {
     const response = await apiClient.post('/insert_tires', { url, page_count: pageCount });
     const task_id = response.data.task_id;
     return await pollTaskStatus(task_id);
 };
 
-const pollTaskStatus = async (task_id) => {
-    for (let i = 0; i < 120; i++) {
-        await new Promise(r => setTimeout(r, 3000));
-        const response = await apiClient.get(`/task_status/${task_id}`);
-        const status = response.data;
-        if (status.status === 'completed') {
-            tiresCache = null;
-            return { data: status.tires || [] };
-        }
-        if (status.status === 'failed') throw new Error(status.error || 'Scraping failed');
-    }
-    throw new Error('Timeout');
-};
-// ── TASK ───────────────────────────────────────────────────────────────────
 const pollTaskStatus = async (task_id) => {
     for (let i = 0; i < 120; i++) {
         await new Promise(r => setTimeout(r, 5000));
@@ -146,17 +126,15 @@ const pollTaskStatus = async (task_id) => {
     throw new Error('Timeout');
 };
 
-// ── ADD TO DATABASE ───────────────────────────────────────────────────────────
 export const addTiresToDatabase = async (tires) => {
-    return { message: "Tires already saved during scraping" };
+    const response = await apiClient.post('/save_tires', { tires });
+    return response.data;
 };
 
-// ── PRICE HISTORY ─────────────────────────────────────────────────────────────
 export const fetchTirePriceHistory = async (tireId) => {
     return { price_history: [] };
 };
 
-// ── ADMIN (заглушка) ──────────────────────────────────────────────────────────
 export const adminAPI = {
     getUsers: async () => ({ users: [], total: 0 }),
     approveUser: async () => ({}),
