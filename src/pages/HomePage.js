@@ -196,84 +196,63 @@ const HomePage = () => {
 
     // Build the URL for the scraper based on selected filters
     const buildScraperUrl = () => {
-        // Base URL components
-        let baseUrl = 'https://infoshina.com.ua/uk/shiny';
-        const queryParams = {};
-        const pathComponents = [];
+    let baseUrl = 'https://infoshina.com.ua/uk/shiny';
+    const queryParams = {};
 
-        // Add brand to path if selected
-        if (selectedFilters.brands.length > 0) {
-            const brandValue = selectedFilters.brands[0];
-            const brandName = typeof brandValue === 'object' ? brandValue.brand_name : brandValue;
-            pathComponents.push(brandName.toLowerCase());
-        }
+    // Сезон идёт в путь
+    if (selectedFilters.seasons.length > 0) {
+        const season = typeof selectedFilters.seasons[0] === 'object'
+            ? selectedFilters.seasons[0].id
+            : selectedFilters.seasons[0];
+        baseUrl = `${baseUrl}/${season}`;
+    }
 
-        // Add width/height/radius components to the path in the correct format
-        if (selectedFilters.widths.length > 0) {
-            const widthValue = selectedFilters.widths[0];
-            const width = typeof widthValue === 'object' ? widthValue.width : widthValue;
-            pathComponents.push(`w${width}`);
-        }
+    // Ширина/профиль/диаметр в путь
+    if (selectedFilters.widths.length > 0) {
+        const w = typeof selectedFilters.widths[0] === 'object' ? selectedFilters.widths[0].width : selectedFilters.widths[0];
+        baseUrl = `${baseUrl}/w${w}`;
+    }
+    if (selectedFilters.profils.length > 0) {
+        const p = typeof selectedFilters.profils[0] === 'object' ? selectedFilters.profils[0].profil : selectedFilters.profils[0];
+        baseUrl = `${baseUrl}/h${p}`;
+    }
+    if (selectedFilters.diametrs.length > 0) {
+        const d = typeof selectedFilters.diametrs[0] === 'object' ? selectedFilters.diametrs[0].diametr : selectedFilters.diametrs[0];
+        baseUrl = `${baseUrl}/r${d}`;
+    }
 
-        if (selectedFilters.profils.length > 0) {
-            const profilValue = selectedFilters.profils[0];
-            const profil = typeof profilValue === 'object' ? profilValue.profil : profilValue;
-            pathComponents.push(`h${profil}`);
-        }
+    // Бренды в параметр brand=
+    if (selectedFilters.brands.length > 0) {
+        const brands = selectedFilters.brands.map(b =>
+            (typeof b === 'object' ? b.brand_name : b).toLowerCase()
+        );
+        queryParams.brand = brands.join(',');
+    }
 
-        if (selectedFilters.diametrs.length > 0) {
-            const diametrValue = selectedFilters.diametrs[0];
-            const diametr = typeof diametrValue === 'object' ? diametrValue.diametr : diametrValue;
-            pathComponents.push(`r${diametr}`);
-        }
+    // Тип авто
+    if (selectedFilters.vehicleTypes.length > 0) {
+        const types = selectedFilters.vehicleTypes.map(t =>
+            typeof t === 'object' ? t.id : t
+        );
+        queryParams.tip_avto = types.join(',');
+    }
 
-        // Handle additional brands (beyond the first) in query parameters
-        if (selectedFilters.brands.length > 1) {
-            const brandValues = selectedFilters.brands.map(brand =>
-                typeof brand === 'object' ? brand.brand_name : brand
-            );
-            queryParams.brand = brandValues.join(',');
-        }
+    // Модели
+    if (selectedFilters.models.length > 0) {
+        const models = selectedFilters.models.map(m =>
+            typeof m === 'object' ? m.model : m
+        );
+        queryParams.model = models.join(',');
+    }
 
-        // Add seasons as a comma-separated list
-        if (selectedFilters.seasons.length > 0) {
-            const seasonValues = selectedFilters.seasons.map(season =>
-                typeof season === 'object' ? season.id : season
-            );
-            queryParams.sezon = seasonValues.join(',');
-        }
+    const queryString = Object.entries(queryParams)
+        .map(([k, v]) => `${k}=${v}`)
+        .join('&');
 
-        // Add vehicle types as a comma-separated list
-        if (selectedFilters.vehicleTypes.length > 0) {
-            const vehicleTypeValues = selectedFilters.vehicleTypes.map(type =>
-                typeof type === 'object' ? type.id : type
-            );
-            queryParams.tip_avto = vehicleTypeValues.join(',');
-        }
-
-        // Add models as a comma-separated list
-        if (selectedFilters.models.length > 0) {
-            const modelValues = selectedFilters.models.map(model =>
-                typeof model === 'object' ? model.model : model
-            );
-            queryParams.model = modelValues.join(',');
-        }
-
-        // Build the URL with path components
-        if (pathComponents.length > 0) {
-            baseUrl = `${baseUrl}/${pathComponents.join('/')}`;
-        }
-
-        // Build query string
-        const queryString = Object.entries(queryParams)
-            .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-            .join('&');
-
-        // Construct the final URL
-        const url = queryString ? `${baseUrl}?${queryString}` : baseUrl;
-        console.log('Generated scraper URL:', url);
-        return url;
-    };
+    const url = queryString ? `${baseUrl}?${queryString}` : baseUrl;
+    console.log('Generated scraper URL:', url);
+    return url;
+};
 
     const handleSearch = async () => {
         setLoading(true);
