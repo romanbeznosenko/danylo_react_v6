@@ -322,7 +322,20 @@ const HomePage = () => {
 
         setLoading(true);
         try {
-            await addTiresToDatabase(tires);
+            // Map back to backend format (Tire class expects id, name, brand)
+            const tiresForBackend = tires.map(t => ({
+                id: t.tire_id,
+                name: t.tire_name,
+                brand: t.brand_name,
+                price: t.price,
+                width: t.width,
+                profil: t.profil,
+                diametr: t.diametr,
+                model: t.model,
+                season: t.season,
+                link: t.link
+            }));
+            await addTiresToDatabase(tiresForBackend);
             alert('Tires successfully added to database!');
         } catch (err) {
             setError('Failed to add tires to database.');
