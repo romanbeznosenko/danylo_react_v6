@@ -207,8 +207,8 @@ const DatabaseTiresPage = () => {
 
             const response = await fetchTires(apiParams);
 
-            if (response && response.data) {
-                setTires(response.data || []);
+            if (response && response.tires) {
+                setTires(response.tires || []);
                 setPaginationInfo({
                     page: response.page || page,
                     perPage: response.per_page || perPage,
