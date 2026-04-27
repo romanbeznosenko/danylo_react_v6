@@ -12,7 +12,8 @@ import {
     fetchTireDiametrs,
     fetchTireModels,
     scrapeTires,
-    addTiresToDatabase
+    addTiresToDatabase,
+    fetchAllTires
 } from '../services/api';
 import './HomePage.css';
 
@@ -87,6 +88,8 @@ const HomePage = () => {
     const [apiRetryCount, setApiRetryCount] = useState(0);
     const [shouldRetry, setShouldRetry] = useState(true);
     const [searchUrl, setSearchUrl] = useState('');
+    const [fetchAllLoading, setFetchAllLoading] = useState(false);
+    const [fetchAllProgress, setFetchAllProgress] = useState(null);
 
     useEffect(() => {
         const loadFilterData = async () => {
@@ -345,6 +348,35 @@ const HomePage = () => {
         }
     };
 
+    const handleFetchAll = async () => {
+        if (fetchAllLoading) return;
+
+        const confirmed = window.confirm(
+            'This will fetch ALL tires from infoshina.com.ua (~165,000+) and save them to the database. ' +
+            'This may take 30-60 minutes. Continue?'
+        );
+        if (!confirmed) return;
+
+        setFetchAllLoading(true);
+        setFetchAllProgress({ status: 'started', progress: 0, total_tires: 0 });
+        setError(null);
+
+        try {
+            const result = await fetchAllTires(true, (status) => {
+                setFetchAllProgress(status);
+            });
+
+            setFetchAllProgress(null);
+            alert(`Fetch All complete! Saved ${result.saved || result.total_tires} tires to database.`);
+        } catch (err) {
+            setError(`Fetch All failed: ${err.message}`);
+            console.error(err);
+        } finally {
+            setFetchAllLoading(false);
+            setFetchAllProgress(null);
+        }
+    };
+
     const handleExportToCsv = () => {
         if (!tires.length) return;
 
@@ -439,6 +471,70 @@ const HomePage = () => {
                     />
 
                     <div className="results-container">
+                        {/* Fetch All Section */}
+                        <div className="fetch-all-section" style={{
+                            padding: '15px',
+                            marginBottom: '15px',
+                            background: '#f8f9fa',
+                            borderRadius: '8px',
+                            border: '1px solid #dee2e6'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
+                                <button
+                                    onClick={handleFetchAll}
+                                    disabled={fetchAllLoading || loading}
+                                    style={{
+                                        padding: '10px 24px',
+                                        backgroundColor: fetchAllLoading ? '#6c757d' : '#dc3545',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '6px',
+                                        cursor: fetchAllLoading ? 'not-allowed' : 'pointer',
+                                        fontWeight: 'bold',
+                                        fontSize: '14px'
+                                    }}
+                                >
+                                    {fetchAllLoading ? 'Fetching...' : 'Fetch All Tires'}
+                                </button>
+                                <span style={{ color: '#6c757d', fontSize: '13px' }}>
+                                    Fetch all ~165K tires from infoshina.com.ua and save to DB
+                                </span>
+                            </div>
+
+                            {fetchAllProgress && (
+                                <div style={{ marginTop: '12px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '5px' }}>
+                                        <span>
+                                            {fetchAllProgress.status === 'scraping' && `Scraping page ${fetchAllProgress.current_page || '?'}/${fetchAllProgress.total_pages || '?'}`}
+                                            {fetchAllProgress.status === 'saving' && `Saving to database: ${fetchAllProgress.saved || 0}/${fetchAllProgress.total_tires || 0}`}
+                                            {fetchAllProgress.status === 'started' && 'Starting...'}
+                                        </span>
+                                        <span>{fetchAllProgress.progress || 0}%</span>
+                                    </div>
+                                    <div style={{
+                                        width: '100%',
+                                        height: '8px',
+                                        backgroundColor: '#e9ecef',
+                                        borderRadius: '4px',
+                                        overflow: 'hidden'
+                                    }}>
+                                        <div style={{
+                                            width: `${fetchAllProgress.progress || 0}%`,
+                                            height: '100%',
+                                            backgroundColor: fetchAllProgress.status === 'saving' ? '#28a745' : '#007bff',
+                                            transition: 'width 0.3s ease',
+                                            borderRadius: '4px'
+                                        }} />
+                                    </div>
+                                    {fetchAllProgress.total_tires > 0 && (
+                                        <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '4px' }}>
+                                            {fetchAllProgress.total_tires} tires found
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
                         {error && (
                             <ErrorMessage
                                 message={error}
