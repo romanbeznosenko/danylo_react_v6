@@ -132,6 +132,36 @@ export const addTiresToDatabase = async (tires) => {
     return response.data;
 };
 
+export const fetchAllTires = async (saveToDb = true, onProgress = null) => {
+    // Start the fetch all task
+    const response = await apiClient.post('/fetch_all', { save_to_db: saveToDb });
+    const task_id = response.data.task_id;
+
+    // Poll for status with progress updates
+    for (let i = 0; i < 600; i++) {  // Up to 50 minutes
+        await new Promise(r => setTimeout(r, 5000));
+        const statusResp = await apiClient.get(`/task_status/${task_id}`);
+        const status = statusResp.data;
+
+        if (onProgress) {
+            onProgress(status);
+        }
+
+        if (status.status === 'completed') {
+            tiresCache = null;
+            const resultResp = await apiClient.get(`/task_result/${task_id}`);
+            return {
+                data: resultResp.data.tires || [],
+                saved: status.saved || 0,
+                total_tires: status.total_tires || 0
+            };
+        }
+        if (status.status === 'failed') throw new Error(status.error || 'Fetch all failed');
+        if (status.status === 'not_found') throw new Error('Task not found');
+    }
+    throw new Error('Timeout — fetch all took too long');
+};
+
 export const fetchTirePriceHistory = async (tireId) => {
     return { price_history: [] };
 };
