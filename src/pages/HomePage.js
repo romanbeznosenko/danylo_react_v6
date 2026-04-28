@@ -90,6 +90,7 @@ const HomePage = () => {
     const [searchUrl, setSearchUrl] = useState('');
     const [fetchAllLoading, setFetchAllLoading] = useState(false);
     const [fetchAllProgress, setFetchAllProgress] = useState(null);
+    const [fetchAllTiresData, setFetchAllTiresData] = useState([]);
 
     useEffect(() => {
         const loadFilterData = async () => {
@@ -325,7 +326,6 @@ const HomePage = () => {
 
         setLoading(true);
         try {
-            // Map back to backend format (Tire class expects id, name, brand)
             const tiresForBackend = tires.map(t => ({
                 id: t.tire_id,
                 name: t.tire_name,
@@ -348,33 +348,86 @@ const HomePage = () => {
         }
     };
 
+    // ── Fetch All handlers ──
+
     const handleFetchAll = async () => {
         if (fetchAllLoading) return;
 
         const confirmed = window.confirm(
-            'This will fetch ALL tires from infoshina.com.ua (~165,000+) and save them to the database. ' +
-            'This may take 30-60 minutes. Continue?'
+            'This will fetch ALL tires from infoshina.com.ua (~165,000+). ' +
+            'This may take 3-10 minutes. Continue?'
         );
         if (!confirmed) return;
 
         setFetchAllLoading(true);
         setFetchAllProgress({ status: 'started', progress: 0, total_tires: 0 });
+        setFetchAllTiresData([]);
         setError(null);
 
         try {
-            const result = await fetchAllTires(true, (status) => {
+            const result = await fetchAllTires((status) => {
                 setFetchAllProgress(status);
             });
 
+            setFetchAllTiresData(result.data);
             setFetchAllProgress(null);
-            alert(`Fetch All complete! Saved ${result.saved || result.total_tires} tires to database.`);
+            alert(`Fetch complete! Found ${result.total_tires} tires. Choose: Save to DB or Download CSV.`);
         } catch (err) {
             setError(`Fetch All failed: ${err.message}`);
             console.error(err);
+            setFetchAllProgress(null);
         } finally {
             setFetchAllLoading(false);
-            setFetchAllProgress(null);
         }
+    };
+
+    const handleFetchAllSaveToDb = async () => {
+        if (!fetchAllTiresData.length) return;
+
+        setFetchAllLoading(true);
+        try {
+            await addTiresToDatabase(fetchAllTiresData);
+            alert(`Saved ${fetchAllTiresData.length} tires to database!`);
+        } catch (err) {
+            setError('Failed to save tires to database.');
+            console.error(err);
+        } finally {
+            setFetchAllLoading(false);
+        }
+    };
+
+    const handleFetchAllExportCsv = () => {
+        if (!fetchAllTiresData.length) return;
+
+        const headers = ['ID', 'Name', 'Brand', 'Price', 'Width', 'Profile', 'Diameter', 'Model', 'Season', 'Link'];
+        const csvRows = [headers.join(',')];
+
+        fetchAllTiresData.forEach(tire => {
+            const row = [
+                tire.id,
+                tire.name,
+                tire.brand,
+                tire.price,
+                tire.width,
+                tire.profil,
+                tire.diametr,
+                tire.model,
+                tire.season,
+                tire.link
+            ].map(value => `"${value || ''}"`);
+            csvRows.push(row.join(','));
+        });
+
+        const csvContent = csvRows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `all_tires_${new Date().toISOString().slice(0, 10)}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     const handleExportToCsv = () => {
@@ -471,15 +524,15 @@ const HomePage = () => {
                     />
 
                     <div className="results-container">
-                        {/* Fetch All Section */}
-                        <div className="fetch-all-section" style={{
-                            padding: '15px',
-                            marginBottom: '15px',
+                        {/* ── Fetch All Section ── */}
+                        <div style={{
+                            padding: '16px',
+                            marginBottom: '16px',
                             background: '#f8f9fa',
                             borderRadius: '8px',
                             border: '1px solid #dee2e6'
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                                 <button
                                     onClick={handleFetchAll}
                                     disabled={fetchAllLoading || loading}
@@ -497,40 +550,71 @@ const HomePage = () => {
                                     {fetchAllLoading ? 'Fetching...' : 'Fetch All Tires'}
                                 </button>
                                 <span style={{ color: '#6c757d', fontSize: '13px' }}>
-                                    Fetch all ~165K tires from infoshina.com.ua and save to DB
+                                    Fetch all ~165K tires from infoshina.com.ua (multithreaded)
                                 </span>
                             </div>
 
+                            {/* Progress bar */}
                             {fetchAllProgress && (
                                 <div style={{ marginTop: '12px' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '5px' }}>
                                         <span>
-                                            {fetchAllProgress.status === 'scraping' && `Scraping page ${fetchAllProgress.current_page || '?'}/${fetchAllProgress.total_pages || '?'}`}
-                                            {fetchAllProgress.status === 'saving' && `Saving to database: ${fetchAllProgress.saved || 0}/${fetchAllProgress.total_tires || 0}`}
+                                            {fetchAllProgress.status === 'scraping' && `Scraping: page ${fetchAllProgress.current_page || '?'}/${fetchAllProgress.total_pages || '?'} — ${fetchAllProgress.total_tires || 0} tires`}
                                             {fetchAllProgress.status === 'started' && 'Starting...'}
                                         </span>
                                         <span>{fetchAllProgress.progress || 0}%</span>
                                     </div>
                                     <div style={{
-                                        width: '100%',
-                                        height: '8px',
-                                        backgroundColor: '#e9ecef',
-                                        borderRadius: '4px',
-                                        overflow: 'hidden'
+                                        width: '100%', height: '8px',
+                                        backgroundColor: '#e9ecef', borderRadius: '4px', overflow: 'hidden'
                                     }}>
                                         <div style={{
                                             width: `${fetchAllProgress.progress || 0}%`,
                                             height: '100%',
-                                            backgroundColor: fetchAllProgress.status === 'saving' ? '#28a745' : '#007bff',
+                                            backgroundColor: '#007bff',
                                             transition: 'width 0.3s ease',
                                             borderRadius: '4px'
                                         }} />
                                     </div>
-                                    {fetchAllProgress.total_tires > 0 && (
-                                        <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '4px' }}>
-                                            {fetchAllProgress.total_tires} tires found
-                                        </div>
-                                    )}
+                                </div>
+                            )}
+
+                            {/* Action buttons after fetch completes */}
+                            {fetchAllTiresData.length > 0 && !fetchAllLoading && (
+                                <div style={{ marginTop: '12px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                    <span style={{ fontWeight: 'bold', color: '#28a745' }}>
+                                        ✓ {fetchAllTiresData.length.toLocaleString()} tires fetched
+                                    </span>
+                                    <button
+                                        onClick={handleFetchAllSaveToDb}
+                                        style={{
+                                            padding: '8px 20px',
+                                            backgroundColor: '#28a745',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                            fontWeight: 'bold',
+                                            fontSize: '13px'
+                                        }}
+                                    >
+                                        Save to Database
+                                    </button>
+                                    <button
+                                        onClick={handleFetchAllExportCsv}
+                                        style={{
+                                            padding: '8px 20px',
+                                            backgroundColor: '#007bff',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                            fontWeight: 'bold',
+                                            fontSize: '13px'
+                                        }}
+                                    >
+                                        Download CSV
+                                    </button>
                                 </div>
                             )}
                         </div>
