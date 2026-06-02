@@ -36,7 +36,7 @@ const LoginForm = () => {
                 navigate('/dashboard');
             }
         } else {
-            setError(result.error);
+            setError(result.message);
         }
 
         setLoading(false);
