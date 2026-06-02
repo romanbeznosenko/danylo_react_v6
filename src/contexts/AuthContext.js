@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { authAPI } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -9,26 +10,60 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState({
-        id: 1,
-        email: "admin@tire.com",
-        role: "admin",
-        status: "approved"
-    });
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    // On mount, if a token exists, fetch the current user
+    useEffect(() => {
+        const init = async () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                try {
+                    const me = await authAPI.getCurrentUser();
+                    setUser(me);
+                } catch (err) {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    setUser(null);
+                }
+            }
+            setLoading(false);
+        };
+        init();
+    }, []);
 
     const login = async (email, password) => {
-        const loggedUser = { id: 1, email, role: "admin", status: "approved" };
-        setUser(loggedUser);
-        localStorage.setItem('token', 'mock-token');
-        return { success: true, user: loggedUser };
+        try {
+            const data = await authAPI.login(email, password);
+            localStorage.setItem('token', data.access_token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            setUser(data.user);
+            return { success: true, user: data.user };
+        } catch (err) {
+            const message = err.response?.data?.detail || 'Login failed';
+            return { success: false, message };
+        }
     };
 
-    const register = async (email, password, role = 'guest') => {
-        return { success: true, message: "Registered successfully" };
+    const register = async (email, password) => {
+        try {
+            const data = await authAPI.register(email, password);
+            return {
+                success: true,
+                message: data.status === 'approved'
+                    ? 'Registered and approved! You can now log in.'
+                    : 'Registered successfully. Awaiting admin approval.',
+                status: data.status
+            };
+        } catch (err) {
+            const message = err.response?.data?.detail || 'Registration failed';
+            return { success: false, message };
+        }
     };
 
     const logout = () => {
         localStorage.removeItem('token');
+        localStorage.removeItem('user');
         setUser(null);
     };
 
@@ -39,13 +74,14 @@ export const AuthProvider = ({ children }) => {
     };
 
     const isApproved = () => user && user.status === 'approved';
-    const canAccessDatabase = () => true;
-    const canScrape = () => true;
-    const isAdmin = () => true;
+    const isAdmin = () => user && user.is_admin === true;
+    // All approved users have full access (no role separation per requirements)
+    const canAccessDatabase = () => isApproved();
+    const canScrape = () => isApproved();
 
     return (
         <AuthContext.Provider value={{
-            user, loading: false, login, register, logout,
+            user, loading, login, register, logout,
             hasRole, isApproved, canAccessDatabase, canScrape, isAdmin
         }}>
             {children}
