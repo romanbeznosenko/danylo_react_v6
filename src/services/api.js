@@ -179,7 +179,8 @@ export const fetchAllTires = async (onProgress = null) => {
 };
 
 export const fetchTirePriceHistory = async (tireId) => {
-    return { price_history: [] };
+    const response = await apiClient.get(`/get_tire_price_history/${tireId}`);
+    return response.data;  // { price_history: [ {recorded_at, price}, ... ] }
 };
 
 export const adminAPI = {
