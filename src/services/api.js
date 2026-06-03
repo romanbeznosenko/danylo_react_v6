@@ -7,15 +7,39 @@ const apiClient = axios.create({
     timeout: 600000
 });
 
+// Attach JWT token to every request
+apiClient.interceptors.request.use((config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
+// On 401, clear token (session expired / invalid)
+apiClient.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+        }
+        return Promise.reject(error);
+    }
+);
+
 export const authAPI = {
-    login: async (email, password) => ({
-        access_token: "mock-token",
-        user: { id: 1, email, role: "admin", status: "approved" }
-    }),
-    register: async (email, password, role = 'guest') => ({ message: "Registered successfully" }),
+    login: async (email, password) => {
+        const response = await apiClient.post('/login', { email, password });
+        return response.data;  // { access_token, token_type, user }
+    },
+    register: async (email, password) => {
+        const response = await apiClient.post('/register', { email, password });
+        return response.data;  // { message, user_id, status, is_admin }
+    },
     getCurrentUser: async () => {
-        const stored = localStorage.getItem('user');
-        return stored ? JSON.parse(stored) : null;
+        const response = await apiClient.get('/me');
+        return response.data;
     }
 };
 
@@ -159,7 +183,19 @@ export const fetchTirePriceHistory = async (tireId) => {
 };
 
 export const adminAPI = {
-    getUsers: async () => ({ users: [], total: 0 }),
-    approveUser: async () => ({}),
-    createBackup: async () => ({})
+    getUsers: async () => {
+        const response = await apiClient.get('/admin/users');
+        // Normalize to what AdminPanel expects: { data, total, total_pages }
+        const users = response.data.users || [];
+        return { data: users, total: response.data.total || users.length, total_pages: 1 };
+    },
+    approveUser: async (userId, status = 'approved') => {
+        // status comes from AdminPanel: 'approved' or 'rejected'
+        if (status === 'rejected') {
+            const response = await apiClient.post('/admin/reject', { user_id: userId });
+            return response.data;
+        }
+        const response = await apiClient.post('/admin/approve', { user_id: userId });
+        return response.data;
+    }
 };
