@@ -7,8 +7,6 @@ const AdminPanel = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [actionLoading, setActionLoading] = useState({});
-    const [backupLoading, setBackupLoading] = useState(false);
-    const [backupMessage, setBackupMessage] = useState('');
 
     // Pagination state
     const [pagination, setPagination] = useState({
@@ -30,17 +28,19 @@ const AdminPanel = () => {
         setError(null);
 
         try {
-            const response = await adminAPI.getUsers(
-                pagination.page,
-                pagination.perPage,
-                statusFilter
-            );
+            const response = await adminAPI.getUsers();
 
-            setUsers(response.data || []);
+            let allUsers = response.data || [];
+            // Client-side status filter
+            if (statusFilter) {
+                allUsers = allUsers.filter(u => u.status === statusFilter);
+            }
+
+            setUsers(allUsers);
             setPagination(prev => ({
                 ...prev,
-                total: response.total || 0,
-                totalPages: response.total_pages || 0
+                total: allUsers.length,
+                totalPages: 1
             }));
         } catch (err) {
             console.error('Error loading users:', err);
@@ -62,21 +62,6 @@ const AdminPanel = () => {
             setError(`Failed to ${status} user`);
         } finally {
             setActionLoading(prev => ({ ...prev, [userId]: false }));
-        }
-    };
-
-    const handleCreateBackup = async () => {
-        setBackupLoading(true);
-        setBackupMessage('');
-
-        try {
-            const response = await adminAPI.createBackup();
-            setBackupMessage(`Backup created successfully! Size: ${response.backup_size} bytes`);
-        } catch (err) {
-            console.error('Error creating backup:', err);
-            setBackupMessage('Failed to create backup');
-        } finally {
-            setBackupLoading(false);
         }
     };
 
@@ -127,22 +112,8 @@ const AdminPanel = () => {
             <div className="container">
                 <div className="admin-header">
                     <h1>Admin Panel</h1>
-                    <div className="admin-actions">
-                        <button
-                            onClick={handleCreateBackup}
-                            disabled={backupLoading}
-                            className="backup-btn"
-                        >
-                            {backupLoading ? 'Creating Backup...' : 'Create Database Backup'}
-                        </button>
-                    </div>
                 </div>
 
-                {backupMessage && (
-                    <div className={`backup-message ${backupMessage.includes('Failed') ? 'error' : 'success'}`}>
-                        {backupMessage}
-                    </div>
-                )}
 
                 <div className="users-section">
                     <div className="section-header">
