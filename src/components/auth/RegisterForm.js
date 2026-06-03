@@ -54,7 +54,7 @@ const RegisterForm = () => {
                 role: 'guest'
             });
         } else {
-            setError(result.error);
+            setError(result.message);
         }
 
         setLoading(false);
@@ -93,23 +93,6 @@ const RegisterForm = () => {
                             placeholder="Enter your email"
                             disabled={loading}
                         />
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="role">Account Type</label>
-                        <select
-                            id="role"
-                            name="role"
-                            value={formData.role}
-                            onChange={handleChange}
-                            disabled={loading}
-                        >
-                            <option value="guest">Guest (No database access)</option>
-                            <option value="user">User (Full database access - requires approval)</option>
-                        </select>
-                        <small className="form-help">
-                            Guest accounts are automatically approved. User accounts require admin approval.
-                        </small>
                     </div>
 
                     <div className="form-group">
