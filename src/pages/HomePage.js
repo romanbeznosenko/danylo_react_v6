@@ -371,26 +371,11 @@ const HomePage = () => {
 
             setFetchAllTiresData(result.data);
             setFetchAllProgress(null);
-            alert(`Fetch complete! Found ${result.total_tires} tires. Choose: Save to DB or Download CSV.`);
+            alert(`Fetch complete! ${result.total_tires} tires fetched and saved to database. You can download the CSV below.`);
         } catch (err) {
             setError(`Fetch All failed: ${err.message}`);
             console.error(err);
             setFetchAllProgress(null);
-        } finally {
-            setFetchAllLoading(false);
-        }
-    };
-
-    const handleFetchAllSaveToDb = async () => {
-        if (!fetchAllTiresData.length) return;
-
-        setFetchAllLoading(true);
-        try {
-            await addTiresToDatabase(fetchAllTiresData);
-            alert(`Saved ${fetchAllTiresData.length} tires to database!`);
-        } catch (err) {
-            setError('Failed to save tires to database.');
-            console.error(err);
         } finally {
             setFetchAllLoading(false);
         }
@@ -583,23 +568,8 @@ const HomePage = () => {
                             {fetchAllTiresData.length > 0 && !fetchAllLoading && (
                                 <div style={{ marginTop: '12px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                                     <span style={{ fontWeight: 'bold', color: '#28a745' }}>
-                                        ✓ {fetchAllTiresData.length.toLocaleString()} tires fetched
+                                        ✓ {fetchAllTiresData.length.toLocaleString()} tires fetched & saved to database
                                     </span>
-                                    <button
-                                        onClick={handleFetchAllSaveToDb}
-                                        style={{
-                                            padding: '8px 20px',
-                                            backgroundColor: '#28a745',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '6px',
-                                            cursor: 'pointer',
-                                            fontWeight: 'bold',
-                                            fontSize: '13px'
-                                        }}
-                                    >
-                                        Save to Database
-                                    </button>
                                     <button
                                         onClick={handleFetchAllExportCsv}
                                         style={{
