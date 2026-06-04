@@ -91,6 +91,9 @@ const HomePage = () => {
     const [fetchAllLoading, setFetchAllLoading] = useState(false);
     const [fetchAllProgress, setFetchAllProgress] = useState(null);
     const [fetchAllTiresData, setFetchAllTiresData] = useState([]);
+    // In-app modals (replace browser alert/confirm)
+    const [confirmModal, setConfirmModal] = useState(null);   // { title, message, onConfirm }
+    const [notifyModal, setNotifyModal] = useState(null);     // { title, message }
 
     useEffect(() => {
         const loadFilterData = async () => {
@@ -339,7 +342,7 @@ const HomePage = () => {
                 link: t.link
             }));
             await addTiresToDatabase(tiresForBackend);
-            alert('Tires successfully added to database!');
+            setNotifyModal({ title: 'Success', message: 'Tires successfully added to database!' });
         } catch (err) {
             setError('Failed to add tires to database.');
             console.error(err);
@@ -350,15 +353,18 @@ const HomePage = () => {
 
     // ── Fetch All handlers ──
 
-    const handleFetchAll = async () => {
+    const handleFetchAll = () => {
         if (fetchAllLoading) return;
+        setConfirmModal({
+            title: 'Fetch All Tires',
+            message: 'This will fetch ALL tires from infoshina.com.ua (passenger, SUV and light-truck categories, ~145,000) and save them to the database. This may take a few minutes. Continue?',
+            confirmLabel: 'Start',
+            onConfirm: runFetchAll
+        });
+    };
 
-        const confirmed = window.confirm(
-            'This will fetch ALL tires from infoshina.com.ua (~165,000+). ' +
-            'This may take 3-10 minutes. Continue?'
-        );
-        if (!confirmed) return;
-
+    const runFetchAll = async () => {
+        setConfirmModal(null);
         setFetchAllLoading(true);
         setFetchAllProgress({ status: 'started', progress: 0, total_tires: 0 });
         setFetchAllTiresData([]);
@@ -371,7 +377,10 @@ const HomePage = () => {
 
             setFetchAllTiresData(result.data);
             setFetchAllProgress(null);
-            alert(`Fetch complete! ${result.total_tires} tires fetched and saved to database. You can download the CSV below.`);
+            setNotifyModal({
+                title: 'Fetch Complete',
+                message: `${result.total_tires.toLocaleString()} tires fetched and saved to the database. You can download the CSV below.`
+            });
         } catch (err) {
             setError(`Fetch All failed: ${err.message}`);
             console.error(err);
@@ -471,8 +480,55 @@ const HomePage = () => {
         });
     };
 
+    const modalBackdropStyle = {
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex',
+        alignItems: 'center', justifyContent: 'center', zIndex: 1000
+    };
+    const modalBoxStyle = {
+        background: 'white', borderRadius: '12px', padding: '24px',
+        maxWidth: '440px', width: '90%', boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
+    };
+    const modalBtnPrimary = {
+        padding: '9px 20px', backgroundColor: '#4f46e5', color: 'white',
+        border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px'
+    };
+    const modalBtnSecondary = {
+        padding: '9px 20px', backgroundColor: '#e5e7eb', color: '#333',
+        border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px'
+    };
+
     return (
         <div className="home-page">
+            {/* Confirm modal */}
+            {confirmModal && (
+                <div style={modalBackdropStyle} onClick={() => setConfirmModal(null)}>
+                    <div style={modalBoxStyle} onClick={e => e.stopPropagation()}>
+                        <h3 style={{ margin: '0 0 12px', fontSize: '18px' }}>{confirmModal.title}</h3>
+                        <p style={{ margin: '0 0 20px', color: '#444', lineHeight: 1.5 }}>{confirmModal.message}</p>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                            <button onClick={() => setConfirmModal(null)} style={modalBtnSecondary}>Cancel</button>
+                            <button onClick={confirmModal.onConfirm} style={modalBtnPrimary}>
+                                {confirmModal.confirmLabel || 'Confirm'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Notification modal */}
+            {notifyModal && (
+                <div style={modalBackdropStyle} onClick={() => setNotifyModal(null)}>
+                    <div style={modalBoxStyle} onClick={e => e.stopPropagation()}>
+                        <h3 style={{ margin: '0 0 12px', fontSize: '18px' }}>{notifyModal.title}</h3>
+                        <p style={{ margin: '0 0 20px', color: '#444', lineHeight: 1.5 }}>{notifyModal.message}</p>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            <button onClick={() => setNotifyModal(null)} style={modalBtnPrimary}>OK</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="container">
                 <div className="page-content">
                     {filterLoading ? (
