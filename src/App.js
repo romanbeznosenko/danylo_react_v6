@@ -5,6 +5,8 @@ import { AuthProvider } from './contexts/AuthContext';
 import Header from './components/Header';
 import HomePage from './pages/HomePage';
 import DatabaseTiresPage from './pages/DatabaseTiresPage';
+import PriceComparisonPage from './pages/PriceComparisonPage';
+import MappingPage from './pages/MappingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
@@ -94,6 +96,32 @@ function AppWithHeader() {
                 requireApproval={true}
               >
                 <AdminPanel />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Price comparison - approved users */}
+          <Route
+            path="/comparison"
+            element={
+              <ProtectedRoute
+                requiredRoles={['user', 'admin']}
+                requireApproval={true}
+              >
+                <PriceComparisonPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ID Mapping - approved users */}
+          <Route
+            path="/mapping"
+            element={
+              <ProtectedRoute
+                requiredRoles={['user', 'admin']}
+                requireApproval={true}
+              >
+                <MappingPage />
               </ProtectedRoute>
             }
           />
