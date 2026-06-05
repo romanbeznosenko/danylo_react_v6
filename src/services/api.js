@@ -183,6 +183,31 @@ export const fetchTirePriceHistory = async (tireId) => {
     return response.data;  // { price_history: [ {recorded_at, price}, ... ] }
 };
 
+export const comparePrices = async (items) => {
+    const response = await apiClient.post('/compare_prices', { items });
+    return response.data;  // { results, total, matched, not_in_db }
+};
+
+export const mappingAPI = {
+    list: async () => {
+        const response = await apiClient.get('/mapping/list');
+        return response.data;  // { mappings, total }
+    },
+    add: async (myId, infoshinaId) => {
+        const response = await apiClient.post('/mapping/add', { my_id: myId, infoshina_id: infoshinaId });
+        return response.data;
+    },
+    bulk: async (pairs) => {
+        // pairs: [[my_id, infoshina_id], ...]
+        const response = await apiClient.post('/mapping/bulk', { pairs });
+        return response.data;  // { message, count }
+    },
+    remove: async (myId) => {
+        const response = await apiClient.post('/mapping/delete', { my_id: myId });
+        return response.data;
+    }
+};
+
 export const adminAPI = {
     getUsers: async () => {
         const response = await apiClient.get('/admin/users');
