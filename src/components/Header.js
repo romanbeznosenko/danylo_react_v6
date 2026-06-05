@@ -55,6 +55,28 @@ const Header = () => {
                                     </li>
                                 )}
 
+                                {canAccessDatabase() && (
+                                    <li>
+                                        <NavLink
+                                            to="/comparison"
+                                            className={({ isActive }) => isActive ? 'active' : ''}
+                                        >
+                                            Comparison
+                                        </NavLink>
+                                    </li>
+                                )}
+
+                                {canAccessDatabase() && (
+                                    <li>
+                                        <NavLink
+                                            to="/mapping"
+                                            className={({ isActive }) => isActive ? 'active' : ''}
+                                        >
+                                            Mapping
+                                        </NavLink>
+                                    </li>
+                                )}
+
                                 {isAdmin() && (
                                     <li>
                                         <NavLink
