@@ -104,8 +104,8 @@ const PriceComparisonPage = () => {
 
     const diffColor = (diff) => {
         if (diff === null || diff === undefined) return '#999';
-        if (diff > 0) return '#16a34a';   // your price higher than infoshina = green (you can lower / more margin)
-        if (diff < 0) return '#dc2626';   // your price lower = red
+        if (diff < 0) return '#16a34a';   // your price lower than infoshina = good = green
+        if (diff > 0) return '#dc2626';   // your price higher = red
         return '#666';
     };
 
