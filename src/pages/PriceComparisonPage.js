@@ -7,6 +7,7 @@ const PriceComparisonPage = () => {
     const [fileName, setFileName] = useState('');
     const [results, setResults] = useState([]);
     const [names, setNames] = useState({});  // my_id -> cleaned product name
+    const [suppliers, setSuppliers] = useState({});  // my_id -> supplier (column F)
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -32,6 +33,9 @@ const PriceComparisonPage = () => {
             const idIdx = header.findIndex(h => h === 'id' || h === 'id товара' || h === 'my_id' || h.includes('id товара'));
             const priceIdx = header.findIndex(h => h.includes('цена продажи') || h.includes('price') || h === 'цена' || h.includes('ціна'));
             const nameIdx = header.findIndex(h => h.includes('название') || h.includes('назва') || h.includes('name'));
+            // Поставщик: по заголовку, запасной варіант — колонка F (індекс 5)
+            let supplierIdx = header.findIndex(h => h.includes('поставщик') || h.includes('постачальник') || h.includes('supplier'));
+            if (supplierIdx === -1) supplierIdx = 5;
             if (idIdx === -1 || priceIdx === -1) {
                 throw new Error('Could not find "id" and "price" columns.');
             }
@@ -44,6 +48,7 @@ const PriceComparisonPage = () => {
             const seen = new Set();
             const items = [];
             const nameMap = {};
+            const supplierMap = {};
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
                 if (!row || row[idIdx] === undefined || row[idIdx] === '') continue;
@@ -52,9 +57,11 @@ const PriceComparisonPage = () => {
                 seen.add(id);
                 items.push({ id, price: row[priceIdx] });
                 if (nameIdx !== -1) nameMap[id] = stripPrefix(row[nameIdx]);
+                if (supplierIdx !== -1 && row[supplierIdx] !== undefined) supplierMap[id] = String(row[supplierIdx]);
             }
             if (items.length === 0) throw new Error('No valid rows with an id found.');
             setNames(nameMap);
+            setSuppliers(supplierMap);
 
             const response = await comparePrices(items);
             setResults(response.results || []);
@@ -80,6 +87,7 @@ const PriceComparisonPage = () => {
             return {
                 'My ID': r.my_id,
                 'Товар': names[r.my_id] || '',
+                'Постачальник': suppliers[r.my_id] || '',
                 'My Price': r.file_price,
                 'Infoshina ID': inf.competitor_id ?? '',
                 'Infoshina Price': inf.price ?? '',
@@ -174,6 +182,7 @@ const PriceComparisonPage = () => {
                                 <tr style={{ background: '#f1f5f9' }}>
                                     <th style={th}>My ID</th>
                                     <th style={th}>Товар</th>
+                                    <th style={th}>Постачальник</th>
                                     <th style={{ ...th, textAlign: 'right' }}>My Price</th>
                                     <th style={{ ...th, textAlign: 'right', borderLeft: '2px solid #e2e8f0' }}>Infoshina</th>
                                     <th style={{ ...th, textAlign: 'right' }}>Diff</th>
@@ -186,6 +195,7 @@ const PriceComparisonPage = () => {
                                     <tr key={i} style={{ borderTop: '1px solid #e2e8f0', background: r.matched_any ? 'white' : '#fff7ed' }}>
                                         <td style={td}>{r.my_id}</td>
                                         <td style={{ ...td, whiteSpace: 'normal', maxWidth: 280 }}>{names[r.my_id] || '—'}</td>
+                                        <td style={td}>{suppliers[r.my_id] || '—'}</td>
                                         <td style={{ ...td, textAlign: 'right', fontWeight: 600 }}>{r.file_price ?? '—'}</td>
                                         {renderCompetitorCells(r.competitors.infoshina, true)}
                                         {renderCompetitorCells(r.competitors.ukrshina, true)}
