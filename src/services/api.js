@@ -191,19 +191,21 @@ export const comparePrices = async (items) => {
 export const mappingAPI = {
     list: async () => {
         const response = await apiClient.get('/mapping/list');
-        return response.data;  // { mappings, total }
+        return response.data;  // { mappings: [{my_id, sources:{...}}], total }
     },
-    add: async (myId, infoshinaId) => {
-        const response = await apiClient.post('/mapping/add', { my_id: myId, infoshina_id: infoshinaId });
+    add: async (myId, source, competitorId) => {
+        const response = await apiClient.post('/mapping/add', {
+            my_id: myId, source, competitor_id: competitorId
+        });
         return response.data;
     },
-    bulk: async (pairs) => {
-        // pairs: [[my_id, infoshina_id], ...]
-        const response = await apiClient.post('/mapping/bulk', { pairs });
+    bulk: async (triples) => {
+        // triples: [[my_id, source, competitor_id], ...]
+        const response = await apiClient.post('/mapping/bulk', { triples });
         return response.data;  // { message, count }
     },
-    remove: async (myId) => {
-        const response = await apiClient.post('/mapping/delete', { my_id: myId });
+    remove: async (myId, source = null) => {
+        const response = await apiClient.post('/mapping/delete', { my_id: myId, source });
         return response.data;
     }
 };
