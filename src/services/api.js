@@ -208,6 +208,17 @@ export const mappingAPI = {
     }
 };
 
+export const ukrshinaAPI = {
+    upload: async (tires) => {
+        const response = await apiClient.post('/upload_ukrshina', { tires });
+        return response.data;  // { message, saved }
+    },
+    stats: async () => {
+        const response = await apiClient.get('/ukrshina/stats');
+        return response.data;  // { count, last_upload }
+    }
+};
+
 export const adminAPI = {
     getUsers: async () => {
         const response = await apiClient.get('/admin/users');
