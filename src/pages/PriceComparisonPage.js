@@ -6,12 +6,12 @@ import LoadingSpinner from '../components/LoadingSpinner';
 const PriceComparisonPage = () => {
     const [fileName, setFileName] = useState('');
     const [results, setResults] = useState([]);
-    const [names, setNames] = useState({});  // my_id -> cleaned product name
-    const [suppliers, setSuppliers] = useState({});  // my_id -> supplier (column F)
+    const [meta, setMeta] = useState({});  // my_id -> {name, supplier, cost, qty, depth}
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [filter, setFilter] = useState('all'); // all | matched | no_mapping
+    const [filter, setFilter] = useState('all'); // all | matched | no_mapping | raise | lower | market
+    const [inStockOnly, setInStockOnly] = useState(false);
 
     const handleFile = async (e) => {
         const file = e.target.files[0];
@@ -31,37 +31,74 @@ const PriceComparisonPage = () => {
 
             const header = rows[0].map(h => String(h).toLowerCase().trim());
             const idIdx = header.findIndex(h => h === 'id' || h === 'id товара' || h === 'my_id' || h.includes('id товара'));
-            const priceIdx = header.findIndex(h => h.includes('цена продажи') || h.includes('price') || h === 'цена' || h.includes('ціна'));
+            const priceIdx = header.findIndex(h => h.includes('цена продажи') || (h.includes('price') && !h.includes('out')) || h === 'цена' || h.includes('ціна продаж'));
             const nameIdx = header.findIndex(h => h.includes('название') || h.includes('назва') || h.includes('name'));
-            // Поставщик: по заголовку, запасной варіант — колонка F (індекс 5)
             let supplierIdx = header.findIndex(h => h.includes('поставщик') || h.includes('постачальник') || h.includes('supplier'));
             if (supplierIdx === -1) supplierIdx = 5;
+            const costIdx = header.findIndex(h => h.includes('цена входа') || h.includes('ціна входу') || h.includes('cost'));
+            const qtyIdx = header.findIndex(h => h.includes('кол-во') || h.includes('кількість') || h.includes('qty') || h.includes('quantity'));
+            const outIdx = header.findIndex(h => h.includes('цена выхода') || h.includes('ціна виходу') || h.includes('выход') || h.includes('виход'));
             if (idIdx === -1 || priceIdx === -1) {
                 throw new Error('Could not find "id" and "price" columns.');
             }
+            if (outIdx === -1) {
+                throw new Error('Не знайдено колонку "Цена выхода" — вона потрібна для визначення ціноутворюючої позиції.');
+            }
 
-            // Strip leading season prefix like "Летняя шина", "Зимова шина", "Всесезонная шина"
             const stripPrefix = (s) => String(s || '')
                 .replace(/^(Летн(яя|ие)|Зимн(яя|ие)|Зимов[аі]|Літн[яі]|Всесезонн(ая|ые|а|і))\s+шин[аыиыні]*\s+/i, '')
                 .trim();
+            const num = (v) => {
+                const n = parseFloat(String(v).replace(',', '.'));
+                return isNaN(n) ? null : n;
+            };
 
-            const seen = new Set();
-            const items = [];
-            const nameMap = {};
-            const supplierMap = {};
+            // Group by id. Price-setting position = row where Цена продажи == Цена выхода.
+            const groups = {};  // id -> { rows: [...], depth }
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
                 if (!row || row[idIdx] === undefined || row[idIdx] === '') continue;
                 const id = parseInt(row[idIdx], 10);
-                if (isNaN(id) || seen.has(id)) continue;
-                seen.add(id);
-                items.push({ id, price: row[priceIdx] });
-                if (nameIdx !== -1) nameMap[id] = stripPrefix(row[nameIdx]);
-                if (supplierIdx !== -1 && row[supplierIdx] !== undefined) supplierMap[id] = String(row[supplierIdx]);
+                if (isNaN(id)) continue;
+
+                const price = num(row[priceIdx]);
+                const out = num(row[outIdx]);
+                const cost = costIdx !== -1 ? num(row[costIdx]) : null;
+                const qty = qtyIdx !== -1 ? (num(row[qtyIdx]) || 0) : 0;
+                const supplier = supplierIdx !== -1 && row[supplierIdx] !== undefined ? String(row[supplierIdx]) : '';
+                const name = nameIdx !== -1 ? stripPrefix(row[nameIdx]) : '';
+
+                if (!groups[id]) groups[id] = { rows: [], name };
+                groups[id].rows.push({ price, out, cost, qty, supplier });
             }
-            if (items.length === 0) throw new Error('No valid rows with an id found.');
-            setNames(nameMap);
-            setSuppliers(supplierMap);
+
+            const ids = Object.keys(groups).map(Number);
+            if (ids.length === 0) throw new Error('No valid rows with an id found.');
+
+            const items = [];
+            const metaMap = {};
+            for (const id of ids) {
+                const g = groups[id];
+                const depth = g.rows.length;
+                // Find price-setting row: продажа == выход (exact)
+                let ps = g.rows.find(r => r.price != null && r.out != null && r.price === r.out);
+                if (!ps) ps = g.rows[0];  // safety fallback (shouldn't happen per business rule)
+
+                // Stock across other positions (for the "in stock but not price-setting" hint)
+                const totalQty = g.rows.reduce((s, r) => s + (r.qty || 0), 0);
+                const otherQty = totalQty - (ps.qty || 0);
+
+                items.push({ id, price: ps.price });
+                metaMap[id] = {
+                    name: g.name,
+                    supplier: ps.supplier,
+                    cost: ps.cost,
+                    qty: ps.qty || 0,          // stock of the price-setting position
+                    otherQty: otherQty,        // stock available in other positions
+                    depth: depth,
+                };
+            }
+            setMeta(metaMap);
 
             const response = await comparePrices(items);
             setResults(response.results || []);
@@ -85,10 +122,19 @@ const PriceComparisonPage = () => {
             const inf = r.competitors.infoshina || {};
             const ukr = r.competitors.ukrshina || {};
             const rec = getRecommendation(r);
+            const m = meta[r.my_id] || {};
+            const margin = (m.cost != null && r.file_price != null) ? Math.round(r.file_price - m.cost) : '';
+            const marginPct = (m.cost && r.file_price != null) ? Math.round((r.file_price - m.cost) / m.cost * 100) : '';
             return {
                 'My ID': r.my_id,
-                'Товар': names[r.my_id] || '',
-                'Постачальник': suppliers[r.my_id] || '',
+                'Товар': m.name || '',
+                'Постачальник': m.supplier || '',
+                'Глибина': m.depth ?? '',
+                'Залишок': m.qty ?? '',
+                'Залишок інших': m.otherQty ?? '',
+                'Ціна входу': m.cost ?? '',
+                'Маржа, грн': margin,
+                'Маржа, %': marginPct,
                 'My Price': r.file_price,
                 'Infoshina ID': inf.competitor_id ?? '',
                 'Infoshina Price': inf.price ?? '',
@@ -110,6 +156,7 @@ const PriceComparisonPage = () => {
 
     // Recommendation based on minimum competitor price, 5% threshold
     const THRESHOLD = 0.05;
+    const MIN_MARGIN = 0.07;  // floor: price must stay >= cost * 1.07
     const getRecommendation = (r) => {
         const prices = [];
         if (r.competitors.infoshina && r.competitors.infoshina.price != null) prices.push(r.competitors.infoshina.price);
@@ -119,29 +166,39 @@ const PriceComparisonPage = () => {
         }
         const minPrice = Math.min(...prices);
         const ratio = (r.file_price - minPrice) / minPrice;
+        const m = meta[r.my_id] || {};
+        const floor = m.cost != null ? m.cost * (1 + MIN_MARGIN) : null;  // min allowed price
+
         if (ratio < -THRESHOLD) {
-            // your price is well below min competitor — can raise
+            // below min competitor — can raise toward market
             return { type: 'raise', label: 'Можна підняти', minPrice, delta: Math.round(minPrice - r.file_price) };
         }
         if (ratio > THRESHOLD) {
-            // your price is well above min competitor — should lower
+            // above min competitor — want to lower, but not below floor
+            if (floor != null && minPrice < floor) {
+                // competitor is below our cost+margin floor — can't compete profitably
+                return { type: 'blocked', label: 'Нижче собівартості', minPrice, delta: null };
+            }
             return { type: 'lower', label: 'Варто знизити', minPrice, delta: Math.round(r.file_price - minPrice) };
         }
         return { type: 'market', label: 'В ринку', minPrice, delta: 0 };
     };
 
     const recColor = (type) => {
-        if (type === 'raise') return { bg: '#dcfce7', fg: '#15803d' };   // green - opportunity
-        if (type === 'lower') return { bg: '#fee2e2', fg: '#b91c1c' };   // red - losing sales
-        if (type === 'market') return { bg: '#f1f5f9', fg: '#475569' };  // neutral
+        if (type === 'raise') return { bg: '#dcfce7', fg: '#15803d' };
+        if (type === 'lower') return { bg: '#fee2e2', fg: '#b91c1c' };
+        if (type === 'blocked') return { bg: '#fef3c7', fg: '#92400e' };  // amber - can't compete
+        if (type === 'market') return { bg: '#f1f5f9', fg: '#475569' };
         return { bg: 'transparent', fg: '#cbd5e1' };
     };
 
     const filtered = results.filter(r => {
+        const m = meta[r.my_id] || {};
+        if (inStockOnly && !((m.qty > 0) || (m.otherQty > 0))) return false;
         if (filter === 'all') return true;
         if (filter === 'matched') return r.matched_any;
         if (filter === 'no_mapping') return !r.matched_any;
-        if (filter === 'raise' || filter === 'lower' || filter === 'market') {
+        if (['raise', 'lower', 'market', 'blocked'].includes(filter)) {
             return getRecommendation(r).type === filter;
         }
         return true;
@@ -149,11 +206,9 @@ const PriceComparisonPage = () => {
 
     const recCounts = results.reduce((acc, r) => {
         const t = getRecommendation(r).type;
-        if (t === 'raise') acc.raise++;
-        else if (t === 'lower') acc.lower++;
-        else if (t === 'market') acc.market++;
+        if (acc[t] !== undefined) acc[t]++;
         return acc;
-    }, { raise: 0, lower: 0, market: 0 });
+    }, { raise: 0, lower: 0, market: 0, blocked: 0 });
 
     const diffColor = (diff) => {
         if (diff === null || diff === undefined) return '#999';
@@ -204,18 +259,24 @@ const PriceComparisonPage = () => {
             {stats && (
                 <>
                     <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 16, alignItems: 'center' }}>
-                        <div style={statCard}><span style={statNum}>{stats.total}</span><span style={statLbl}>Total rows</span></div>
-                        <div style={statCard}><span style={{ ...statNum, color: '#16a34a' }}>{stats.matched}</span><span style={statLbl}>Matched</span></div>
+                        <div style={statCard}><span style={statNum}>{stats.total}</span><span style={statLbl}>Всього</span></div>
+                        <div style={statCard}><span style={{ ...statNum, color: '#16a34a' }}>{stats.matched}</span><span style={statLbl}>Зіставлено</span></div>
                         <div style={statCard}><span style={{ ...statNum, color: '#15803d' }}>{recCounts.raise}</span><span style={statLbl}>Можна підняти</span></div>
                         <div style={statCard}><span style={{ ...statNum, color: '#b91c1c' }}>{recCounts.lower}</span><span style={statLbl}>Варто знизити</span></div>
+                        <div style={statCard}><span style={{ ...statNum, color: '#92400e' }}>{recCounts.blocked}</span><span style={statLbl}>Нижче собівартості</span></div>
                         <div style={statCard}><span style={{ ...statNum, color: '#475569' }}>{recCounts.market}</span><span style={statLbl}>В ринку</span></div>
-                        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, cursor: 'pointer' }}>
+                                <input type="checkbox" checked={inStockOnly} onChange={e => setInStockOnly(e.target.checked)} />
+                                Тільки в наявності
+                            </label>
                             <select value={filter} onChange={e => setFilter(e.target.value)} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1' }}>
                                 <option value="all">Всі</option>
                                 <option value="matched">Зіставлені</option>
                                 <option value="no_mapping">Без зіставлення</option>
                                 <option value="raise">Можна підняти</option>
                                 <option value="lower">Варто знизити</option>
+                                <option value="blocked">Нижче собівартості</option>
                                 <option value="market">В ринку</option>
                             </select>
                             <button onClick={handleExport} style={{ padding: '9px 20px', background: '#16a34a', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 'bold' }}>
@@ -230,8 +291,12 @@ const PriceComparisonPage = () => {
                                 <tr style={{ background: '#f1f5f9' }}>
                                     <th style={th}>My ID</th>
                                     <th style={th}>Товар</th>
-                                    <th style={th}>Постачальник</th>
-                                    <th style={{ ...th, textAlign: 'right' }}>My Price</th>
+                                    <th style={th}>Постач.</th>
+                                    <th style={{ ...th, textAlign: 'center' }}>Глиб.</th>
+                                    <th style={{ ...th, textAlign: 'right' }}>Залишок</th>
+                                    <th style={{ ...th, textAlign: 'right' }}>Вхід</th>
+                                    <th style={{ ...th, textAlign: 'right' }}>Маржа</th>
+                                    <th style={{ ...th, textAlign: 'right', borderLeft: '2px solid #e2e8f0' }}>My Price</th>
                                     <th style={{ ...th, textAlign: 'right', borderLeft: '2px solid #e2e8f0' }}>Infoshina</th>
                                     <th style={{ ...th, textAlign: 'right' }}>Diff</th>
                                     <th style={{ ...th, textAlign: 'right', borderLeft: '2px solid #e2e8f0' }}>Ukrshina</th>
@@ -243,12 +308,28 @@ const PriceComparisonPage = () => {
                                 {filtered.map((r, i) => {
                                     const rec = getRecommendation(r);
                                     const rc = recColor(rec.type);
+                                    const m = meta[r.my_id] || {};
+                                    const margin = (m.cost != null && r.file_price != null) ? Math.round(r.file_price - m.cost) : null;
+                                    const marginPct = (m.cost && r.file_price != null) ? Math.round((r.file_price - m.cost) / m.cost * 100) : null;
                                     return (
                                     <tr key={i} style={{ borderTop: '1px solid #e2e8f0', background: r.matched_any ? 'white' : '#fff7ed' }}>
                                         <td style={td}>{r.my_id}</td>
-                                        <td style={{ ...td, whiteSpace: 'normal', maxWidth: 280 }}>{names[r.my_id] || '—'}</td>
-                                        <td style={td}>{suppliers[r.my_id] || '—'}</td>
-                                        <td style={{ ...td, textAlign: 'right', fontWeight: 600 }}>{r.file_price ?? '—'}</td>
+                                        <td style={{ ...td, whiteSpace: 'normal', maxWidth: 240 }}>{m.name || '—'}</td>
+                                        <td style={{ ...td, whiteSpace: 'normal', maxWidth: 140, fontSize: 12 }}>{m.supplier || '—'}</td>
+                                        <td style={{ ...td, textAlign: 'center' }}>{m.depth || '—'}</td>
+                                        <td style={{ ...td, textAlign: 'right', color: m.qty > 0 ? '#15803d' : '#dc2626' }}>
+                                            {m.qty ?? '—'}
+                                            {!(m.qty > 0) && m.otherQty > 0 && (
+                                                <span title="Ціноутворюючої позиції немає на складі, але є інші постачальники" style={{ color: '#ea580c', fontSize: 11, marginLeft: 4 }}>
+                                                    (+{m.otherQty})
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td style={{ ...td, textAlign: 'right' }}>{m.cost ?? '—'}</td>
+                                        <td style={{ ...td, textAlign: 'right', color: margin != null ? (margin > 0 ? '#15803d' : '#dc2626') : '#999' }}>
+                                            {margin != null ? `${margin}${marginPct != null ? ` (${marginPct}%)` : ''}` : '—'}
+                                        </td>
+                                        <td style={{ ...td, textAlign: 'right', fontWeight: 600, borderLeft: '2px solid #e2e8f0' }}>{r.file_price ?? '—'}</td>
                                         {renderCompetitorCells(r.competitors.infoshina, true)}
                                         {renderCompetitorCells(r.competitors.ukrshina, true)}
                                         <td style={{ ...td, borderLeft: '2px solid #e2e8f0' }}>
