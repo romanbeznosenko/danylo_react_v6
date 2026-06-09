@@ -7,6 +7,7 @@ import HomePage from './pages/HomePage';
 import DatabaseTiresPage from './pages/DatabaseTiresPage';
 import PriceComparisonPage from './pages/PriceComparisonPage';
 import MappingPage from './pages/MappingPage';
+import UkrshinaPage from './pages/UkrshinaPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
@@ -122,6 +123,19 @@ function AppWithHeader() {
                 requireApproval={true}
               >
                 <MappingPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Ukrshina - approved users */}
+          <Route
+            path="/ukrshina"
+            element={
+              <ProtectedRoute
+                requiredRoles={['user', 'admin']}
+                requireApproval={true}
+              >
+                <UkrshinaPage />
               </ProtectedRoute>
             }
           />
