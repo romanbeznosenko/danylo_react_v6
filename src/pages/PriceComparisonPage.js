@@ -84,6 +84,7 @@ const PriceComparisonPage = () => {
         const exportData = results.map(r => {
             const inf = r.competitors.infoshina || {};
             const ukr = r.competitors.ukrshina || {};
+            const rec = getRecommendation(r);
             return {
                 'My ID': r.my_id,
                 'Товар': names[r.my_id] || '',
@@ -97,6 +98,8 @@ const PriceComparisonPage = () => {
                 'Ukrshina Price': ukr.price ?? '',
                 'Ukrshina Diff': ukr.diff ?? '',
                 'Ukrshina Diff %': ukr.diff_pct ?? '',
+                'Рекомендація': rec.label,
+                'Зміна, грн': rec.delta ?? '',
             };
         });
         const ws = XLSX.utils.json_to_sheet(exportData);
@@ -105,12 +108,52 @@ const PriceComparisonPage = () => {
         XLSX.writeFile(wb, `price_comparison_${new Date().toISOString().slice(0, 10)}.xlsx`);
     };
 
+    // Recommendation based on minimum competitor price, 5% threshold
+    const THRESHOLD = 0.05;
+    const getRecommendation = (r) => {
+        const prices = [];
+        if (r.competitors.infoshina && r.competitors.infoshina.price != null) prices.push(r.competitors.infoshina.price);
+        if (r.competitors.ukrshina && r.competitors.ukrshina.price != null) prices.push(r.competitors.ukrshina.price);
+        if (prices.length === 0 || r.file_price == null) {
+            return { type: 'none', label: '—', minPrice: null, delta: null };
+        }
+        const minPrice = Math.min(...prices);
+        const ratio = (r.file_price - minPrice) / minPrice;
+        if (ratio < -THRESHOLD) {
+            // your price is well below min competitor — can raise
+            return { type: 'raise', label: 'Можна підняти', minPrice, delta: Math.round(minPrice - r.file_price) };
+        }
+        if (ratio > THRESHOLD) {
+            // your price is well above min competitor — should lower
+            return { type: 'lower', label: 'Варто знизити', minPrice, delta: Math.round(r.file_price - minPrice) };
+        }
+        return { type: 'market', label: 'В ринку', minPrice, delta: 0 };
+    };
+
+    const recColor = (type) => {
+        if (type === 'raise') return { bg: '#dcfce7', fg: '#15803d' };   // green - opportunity
+        if (type === 'lower') return { bg: '#fee2e2', fg: '#b91c1c' };   // red - losing sales
+        if (type === 'market') return { bg: '#f1f5f9', fg: '#475569' };  // neutral
+        return { bg: 'transparent', fg: '#cbd5e1' };
+    };
+
     const filtered = results.filter(r => {
         if (filter === 'all') return true;
         if (filter === 'matched') return r.matched_any;
         if (filter === 'no_mapping') return !r.matched_any;
+        if (filter === 'raise' || filter === 'lower' || filter === 'market') {
+            return getRecommendation(r).type === filter;
+        }
         return true;
     });
+
+    const recCounts = results.reduce((acc, r) => {
+        const t = getRecommendation(r).type;
+        if (t === 'raise') acc.raise++;
+        else if (t === 'lower') acc.lower++;
+        else if (t === 'market') acc.market++;
+        return acc;
+    }, { raise: 0, lower: 0, market: 0 });
 
     const diffColor = (diff) => {
         if (diff === null || diff === undefined) return '#999';
@@ -163,12 +206,17 @@ const PriceComparisonPage = () => {
                     <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 16, alignItems: 'center' }}>
                         <div style={statCard}><span style={statNum}>{stats.total}</span><span style={statLbl}>Total rows</span></div>
                         <div style={statCard}><span style={{ ...statNum, color: '#16a34a' }}>{stats.matched}</span><span style={statLbl}>Matched</span></div>
-                        <div style={statCard}><span style={{ ...statNum, color: '#ea580c' }}>{stats.no_mapping}</span><span style={statLbl}>No mapping</span></div>
+                        <div style={statCard}><span style={{ ...statNum, color: '#15803d' }}>{recCounts.raise}</span><span style={statLbl}>Можна підняти</span></div>
+                        <div style={statCard}><span style={{ ...statNum, color: '#b91c1c' }}>{recCounts.lower}</span><span style={statLbl}>Варто знизити</span></div>
+                        <div style={statCard}><span style={{ ...statNum, color: '#475569' }}>{recCounts.market}</span><span style={statLbl}>В ринку</span></div>
                         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
                             <select value={filter} onChange={e => setFilter(e.target.value)} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1' }}>
-                                <option value="all">All</option>
-                                <option value="matched">Matched</option>
-                                <option value="no_mapping">No mapping</option>
+                                <option value="all">Всі</option>
+                                <option value="matched">Зіставлені</option>
+                                <option value="no_mapping">Без зіставлення</option>
+                                <option value="raise">Можна підняти</option>
+                                <option value="lower">Варто знизити</option>
+                                <option value="market">В ринку</option>
                             </select>
                             <button onClick={handleExport} style={{ padding: '9px 20px', background: '#16a34a', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 'bold' }}>
                                 Download Excel
@@ -188,10 +236,14 @@ const PriceComparisonPage = () => {
                                     <th style={{ ...th, textAlign: 'right' }}>Diff</th>
                                     <th style={{ ...th, textAlign: 'right', borderLeft: '2px solid #e2e8f0' }}>Ukrshina</th>
                                     <th style={{ ...th, textAlign: 'right' }}>Diff</th>
+                                    <th style={{ ...th, borderLeft: '2px solid #e2e8f0' }}>Рекомендація</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filtered.map((r, i) => (
+                                {filtered.map((r, i) => {
+                                    const rec = getRecommendation(r);
+                                    const rc = recColor(rec.type);
+                                    return (
                                     <tr key={i} style={{ borderTop: '1px solid #e2e8f0', background: r.matched_any ? 'white' : '#fff7ed' }}>
                                         <td style={td}>{r.my_id}</td>
                                         <td style={{ ...td, whiteSpace: 'normal', maxWidth: 280 }}>{names[r.my_id] || '—'}</td>
@@ -199,8 +251,17 @@ const PriceComparisonPage = () => {
                                         <td style={{ ...td, textAlign: 'right', fontWeight: 600 }}>{r.file_price ?? '—'}</td>
                                         {renderCompetitorCells(r.competitors.infoshina, true)}
                                         {renderCompetitorCells(r.competitors.ukrshina, true)}
+                                        <td style={{ ...td, borderLeft: '2px solid #e2e8f0' }}>
+                                            {rec.type === 'none' ? <span style={{ color: '#cbd5e1' }}>—</span> : (
+                                                <span style={{ background: rc.bg, color: rc.fg, padding: '3px 10px', borderRadius: 12, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                                    {rec.label}
+                                                    {rec.delta ? ` (${rec.delta > 0 ? '+' : ''}${rec.delta} грн)` : ''}
+                                                </span>
+                                            )}
+                                        </td>
                                     </tr>
-                                ))}
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
