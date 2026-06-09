@@ -6,6 +6,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 const PriceComparisonPage = () => {
     const [fileName, setFileName] = useState('');
     const [results, setResults] = useState([]);
+    const [names, setNames] = useState({});  // my_id -> cleaned product name
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -30,12 +31,19 @@ const PriceComparisonPage = () => {
             const header = rows[0].map(h => String(h).toLowerCase().trim());
             const idIdx = header.findIndex(h => h === 'id' || h === 'id товара' || h === 'my_id' || h.includes('id товара'));
             const priceIdx = header.findIndex(h => h.includes('цена продажи') || h.includes('price') || h === 'цена' || h.includes('ціна'));
+            const nameIdx = header.findIndex(h => h.includes('название') || h.includes('назва') || h.includes('name'));
             if (idIdx === -1 || priceIdx === -1) {
                 throw new Error('Could not find "id" and "price" columns.');
             }
 
+            // Strip leading season prefix like "Летняя шина", "Зимова шина", "Всесезонная шина"
+            const stripPrefix = (s) => String(s || '')
+                .replace(/^(Летн(яя|ие)|Зимн(яя|ие)|Зимов[аі]|Літн[яі]|Всесезонн(ая|ые|а|і))\s+шин[аыиыні]*\s+/i, '')
+                .trim();
+
             const seen = new Set();
             const items = [];
+            const nameMap = {};
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
                 if (!row || row[idIdx] === undefined || row[idIdx] === '') continue;
@@ -43,8 +51,10 @@ const PriceComparisonPage = () => {
                 if (isNaN(id) || seen.has(id)) continue;
                 seen.add(id);
                 items.push({ id, price: row[priceIdx] });
+                if (nameIdx !== -1) nameMap[id] = stripPrefix(row[nameIdx]);
             }
             if (items.length === 0) throw new Error('No valid rows with an id found.');
+            setNames(nameMap);
 
             const response = await comparePrices(items);
             setResults(response.results || []);
@@ -69,6 +79,7 @@ const PriceComparisonPage = () => {
             const ukr = r.competitors.ukrshina || {};
             return {
                 'My ID': r.my_id,
+                'Товар': names[r.my_id] || '',
                 'My Price': r.file_price,
                 'Infoshina ID': inf.competitor_id ?? '',
                 'Infoshina Price': inf.price ?? '',
@@ -162,6 +173,7 @@ const PriceComparisonPage = () => {
                             <thead>
                                 <tr style={{ background: '#f1f5f9' }}>
                                     <th style={th}>My ID</th>
+                                    <th style={th}>Товар</th>
                                     <th style={{ ...th, textAlign: 'right' }}>My Price</th>
                                     <th style={{ ...th, textAlign: 'right', borderLeft: '2px solid #e2e8f0' }}>Infoshina</th>
                                     <th style={{ ...th, textAlign: 'right' }}>Diff</th>
@@ -173,6 +185,7 @@ const PriceComparisonPage = () => {
                                 {filtered.map((r, i) => (
                                     <tr key={i} style={{ borderTop: '1px solid #e2e8f0', background: r.matched_any ? 'white' : '#fff7ed' }}>
                                         <td style={td}>{r.my_id}</td>
+                                        <td style={{ ...td, whiteSpace: 'normal', maxWidth: 280 }}>{names[r.my_id] || '—'}</td>
                                         <td style={{ ...td, textAlign: 'right', fontWeight: 600 }}>{r.file_price ?? '—'}</td>
                                         {renderCompetitorCells(r.competitors.infoshina, true)}
                                         {renderCompetitorCells(r.competitors.ukrshina, true)}
