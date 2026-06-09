@@ -216,6 +216,14 @@ export const ukrshinaAPI = {
     stats: async () => {
         const response = await apiClient.get('/ukrshina/stats');
         return response.data;  // { count, last_upload }
+    },
+    list: async (search = '', limit = 100, offset = 0) => {
+        const response = await apiClient.get('/ukrshina/tires', { params: { search, limit, offset } });
+        return response.data;  // { tires, total }
+    },
+    priceHistory: async (tireId) => {
+        const response = await apiClient.get(`/ukrshina/price_history/${tireId}`);
+        return response.data;  // { price_history: [{recorded_at, price}] }
     }
 };
 
