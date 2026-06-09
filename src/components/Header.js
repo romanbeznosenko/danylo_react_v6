@@ -77,6 +77,17 @@ const Header = () => {
                                     </li>
                                 )}
 
+                                {canAccessDatabase() && (
+                                    <li>
+                                        <NavLink
+                                            to="/ukrshina"
+                                            className={({ isActive }) => isActive ? 'active' : ''}
+                                        >
+                                            Ukrshina
+                                        </NavLink>
+                                    </li>
+                                )}
+
                                 {isAdmin() && (
                                     <li>
                                         <NavLink
