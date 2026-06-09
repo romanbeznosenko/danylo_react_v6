@@ -177,7 +177,7 @@ const PriceComparisonPage = () => {
             // above min competitor — want to lower, but not below floor
             if (floor != null && minPrice < floor) {
                 // competitor is below our cost+margin floor — can't compete profitably
-                return { type: 'blocked', label: 'Нижче собівартості', minPrice, delta: null };
+                return { type: 'blocked', label: 'Маржа < 7%', minPrice, delta: null };
             }
             return { type: 'lower', label: 'Варто знизити', minPrice, delta: Math.round(r.file_price - minPrice) };
         }
@@ -263,7 +263,7 @@ const PriceComparisonPage = () => {
                         <div style={statCard}><span style={{ ...statNum, color: '#16a34a' }}>{stats.matched}</span><span style={statLbl}>Зіставлено</span></div>
                         <div style={statCard}><span style={{ ...statNum, color: '#15803d' }}>{recCounts.raise}</span><span style={statLbl}>Можна підняти</span></div>
                         <div style={statCard}><span style={{ ...statNum, color: '#b91c1c' }}>{recCounts.lower}</span><span style={statLbl}>Варто знизити</span></div>
-                        <div style={statCard}><span style={{ ...statNum, color: '#92400e' }}>{recCounts.blocked}</span><span style={statLbl}>Нижче собівартості</span></div>
+                        <div style={statCard}><span style={{ ...statNum, color: '#92400e' }}>{recCounts.blocked}</span><span style={statLbl}>Маржа < 7%</span></div>
                         <div style={statCard}><span style={{ ...statNum, color: '#475569' }}>{recCounts.market}</span><span style={statLbl}>В ринку</span></div>
                         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                             <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, cursor: 'pointer' }}>
@@ -276,7 +276,7 @@ const PriceComparisonPage = () => {
                                 <option value="no_mapping">Без зіставлення</option>
                                 <option value="raise">Можна підняти</option>
                                 <option value="lower">Варто знизити</option>
-                                <option value="blocked">Нижче собівартості</option>
+                                <option value="blocked">Маржа < 7%</option>
                                 <option value="market">В ринку</option>
                             </select>
                             <button onClick={handleExport} style={{ padding: '9px 20px', background: '#16a34a', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 'bold' }}>
